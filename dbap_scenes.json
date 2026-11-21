@@ -1,0 +1,34 @@
+{
+	"ensemble1": {
+		"sources": {
+			"rich_headset":  { "group": "rich",   "acoustic": false, "home": [-1.5, 2.5], "points": [ { "ch": 1, "offset": [0, 0] } ] },
+			"rich_bowls":    { "group": "rich",   "acoustic": true,  "home": [-1.5, 2.0], "points": [ { "ch": 2, "offset": [0, 0] } ] },
+			"tia_gtr":       { "group": "tia",    "acoustic": false, "home": [-0.5, 2.5], "points": [ { "ch": 3, "offset": [0, 0] } ] },
+			"tia_vox":       { "group": "tia",    "acoustic": false, "home": [-0.5, 2.0], "points": [ { "ch": 4, "offset": [0, 0] } ] },
+			"samiul_gtr":    { "group": "samiul", "acoustic": false, "home": [0.5, 2.5], "width": 1.0,
+			                   "points": [ { "ch": 5, "offset": [-0.5, 0] }, { "ch": 6, "offset": [0.5, 0] } ] },
+			"bilal_gtr":     { "group": "bilal",  "acoustic": false, "home": [1.5, 2.5], "points": [ { "ch": 7, "offset": [0, 0] } ] },
+			"bilal_tape":    { "group": "bilal",  "acoustic": false, "home": [1.5, 2.0], "points": [ { "ch": 8, "offset": [0, 0] } ] },
+			"michael_piano": { "group": "michael","acoustic": true,  "home": [0.0, 1.5], "width": 0.5,
+			                   "points": [ { "ch": 9, "offset": [-0.5, 0] }, { "ch": 10, "offset": [0.5, 0] } ] }
+		}
+	},
+	"ensemble2": {
+		"sources": {
+			"keisha_piano":  { "group": "keisha",  "acoustic": true,  "home": [-1.5, 2.5], "width": 0.5,
+			                   "points": [ { "ch": 11, "offset": [-0.5, 0] }, { "ch": 12, "offset": [0.5, 0] } ] },
+			"martin_cl":     { "group": "martin",  "acoustic": true,  "home": [-0.5, 2.5], "points": [ { "ch": 13, "offset": [0, 0] } ] },
+			"martin_bcl":    { "group": "martin",  "acoustic": true,  "home": [-0.5, 2.0], "points": [ { "ch": 14, "offset": [0, 0] } ] },
+			"olive_keys":    { "group": "olive",   "acoustic": false, "home": [0.5, 2.5], "points": [ { "ch": 15, "offset": [0, 0] } ] },
+			"olive_vox":     { "group": "olive",   "acoustic": false, "home": [0.5, 2.0], "points": [ { "ch": 16, "offset": [0, 0] } ] },
+			"dhaivat_kit":   { "group": "dhaivat", "acoustic": true,  "home": [1.5, 2.5], "width": 1.0,
+			                   "points": [ { "ch": 17, "offset": [-0.5, 0] }, { "ch": 18, "offset": [0.5, 0] },
+			                               { "ch": 19, "offset": [0, 0] },    { "ch": 20, "offset": [0, 0] } ] },
+			"dhaivat_tabla": { "group": "dhaivat", "acoustic": true,  "home": [1.5, 1.8], "width": 0.5,
+			                   "points": [ { "ch": 21, "offset": [-0.5, 0] }, { "ch": 22, "offset": [0.5, 0] } ] },
+			"yuval_vox":     { "group": "yuval",   "acoustic": false, "home": [0.0, 2.5], "enabled": false,
+			                   "note": "host mic, goes through the mains",
+			                   "points": [ { "ch": 23, "offset": [0, 0] } ] }
+		}
+	}
+}

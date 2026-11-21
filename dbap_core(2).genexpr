@@ -1,0 +1,154 @@
+// dbap_core.genexpr
+// DBAP panner: 24 input points -> 6 speakers. Used by dbap_core.gendsp.
+//
+// in 1-24   : USB channels 1-24 from the console (point n = console channel n)
+// out 1-6   : speaker feeds
+//
+// Point and speaker data come from two buffer~s, written by dbap_control.js:
+//   buffer~ dbap_pts 1 5   (24 frames x 5 ch: x, y, level, slew ms, blur m)
+//   buffer~ dbap_spk 1 4   (6 frames x 4 ch: x, y, delay ms, gain)
+//
+// Outputs: 1 FL, 2 FR, 3 SL, 4 SR, 5 BL, 6 BR. Each output has a delay and
+// gain trim for calibration (set by dbap_control.js from the room file).
+//
+// Coordinates in metres, origin = centre of the rectangle,
+// +y toward the stage, +x to the right when facing the stage.
+//
+// CPU: target gains are recalculated every `block` samples (default 32,
+// ~0.7 ms at 48k). Send "block 1" to the gen~ for sample-accurate updates.
+// Smoothing and mixing always run per sample. Points with level 0 whose
+// gains have fully faded are skipped entirely.
+
+Buffer pts("dbap_pts");
+Buffer spk("dbap_spk");
+
+Data ins(24);
+Data st(24, 6);     // smoothed gain per point per speaker
+Data tg(24, 6);     // target gain per point per speaker
+Data cf(24);        // smoothing coefficient per point
+Data act(24);       // 1 = point needs processing
+Data vt(6);         // scratch
+Data acc(6);        // speaker accumulators
+
+Param rolloff(6, min=0.1);   // dB per doubling of distance
+Param block(32, min=1, max=4096);   // samples between gain recalculations
+
+History ctr(0);
+
+// calibration delays, up to 9600 samples (200 ms at 48k)
+Delay dl1(9600);
+Delay dl2(9600);
+Delay dl3(9600);
+Delay dl4(9600);
+Delay dl5(9600);
+Delay dl6(9600);
+
+poke(ins, in1, 0);
+poke(ins, in2, 1);
+poke(ins, in3, 2);
+poke(ins, in4, 3);
+poke(ins, in5, 4);
+poke(ins, in6, 5);
+poke(ins, in7, 6);
+poke(ins, in8, 7);
+poke(ins, in9, 8);
+poke(ins, in10, 9);
+poke(ins, in11, 10);
+poke(ins, in12, 11);
+poke(ins, in13, 12);
+poke(ins, in14, 13);
+poke(ins, in15, 14);
+poke(ins, in16, 15);
+poke(ins, in17, 16);
+poke(ins, in18, 17);
+poke(ins, in19, 18);
+poke(ins, in20, 19);
+poke(ins, in21, 20);
+poke(ins, in22, 21);
+poke(ins, in23, 22);
+poke(ins, in24, 23);
+
+upd = ctr <= 0;
+
+if (upd) {
+	// d^-a with a = rolloff / 6.02, using squared distance: (d^2)^(-a/2)
+	ha = -0.5 * rolloff / 6.0206;
+
+	for (i = 0; i < 24; i = i + 1) {
+		lvl = peek(pts, i, 2);
+		sl = peek(pts, i, 3);
+		poke(cf, sl > 0 ? exp(-1000 / (sl * samplerate)) : 0, i);
+
+		if (lvl > 0) {
+			px = peek(pts, i, 0);
+			py = peek(pts, i, 1);
+			bl = max(peek(pts, i, 4), 0.001);
+			b2 = bl * bl;
+			tot = 0;
+			for (s = 0; s < 6; s = s + 1) {
+				dx = px - peek(spk, s, 0);
+				dy = py - peek(spk, s, 1);
+				v = pow(dx * dx + dy * dy + b2, ha);
+				poke(vt, v, s);
+				tot = tot + v * v;
+			}
+			// constant power: squared gains sum to 1, then scaled by level
+			k = lvl / sqrt(tot);
+			for (s = 0; s < 6; s = s + 1) {
+				poke(tg, peek(vt, s) * k, i, s);
+			}
+			poke(act, 1, i);
+		} else {
+			m = 0;
+			for (s = 0; s < 6; s = s + 1) {
+				poke(tg, 0, i, s);
+				m = max(m, peek(st, i, s));
+			}
+			if (m < 0.000001) {
+				for (s = 0; s < 6; s = s + 1) {
+					poke(st, 0, i, s);
+				}
+				poke(act, 0, i);
+			} else {
+				poke(act, 1, i);
+			}
+		}
+	}
+}
+
+// clamp so a smaller block size takes effect immediately
+bs = floor(block);
+ctr = upd ? bs - 1 : min(ctr - 1, bs - 1);
+
+for (s = 0; s < 6; s = s + 1) {
+	poke(acc, 0, s);
+}
+
+for (i = 0; i < 24; i = i + 1) {
+	if (peek(act, i) > 0) {
+		sig = peek(ins, i);
+		coef = peek(cf, i);
+		for (s = 0; s < 6; s = s + 1) {
+			g = mix(peek(tg, i, s), peek(st, i, s), coef);
+			poke(st, g, i, s);
+			poke(acc, peek(acc, s) + sig * g, s);
+		}
+	}
+}
+
+// calibration: per-speaker delay and gain trim
+msr = samplerate * 0.001;
+
+dl1.write(peek(acc, 0));
+dl2.write(peek(acc, 1));
+dl3.write(peek(acc, 2));
+dl4.write(peek(acc, 3));
+dl5.write(peek(acc, 4));
+dl6.write(peek(acc, 5));
+
+out1 = dl1.read(peek(spk, 0, 2) * msr) * peek(spk, 0, 3);
+out2 = dl2.read(peek(spk, 1, 2) * msr) * peek(spk, 1, 3);
+out3 = dl3.read(peek(spk, 2, 2) * msr) * peek(spk, 2, 3);
+out4 = dl4.read(peek(spk, 3, 2) * msr) * peek(spk, 3, 3);
+out5 = dl5.read(peek(spk, 4, 2) * msr) * peek(spk, 4, 3);
+out6 = dl6.read(peek(spk, 5, 2) * msr) * peek(spk, 5, 3);

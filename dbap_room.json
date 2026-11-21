@@ -1,0 +1,16 @@
+{
+	"units": "ft",
+	"baseline": 24,
+	"speed_of_sound": 343,
+	"speakers": {
+		"1": { "label": "FL", "a": 0,      "b": 24 },
+		"2": { "label": "FR", "a": 24,     "b": 0 },
+		"3": { "label": "SL", "a": 12,     "b": 26.833 },
+		"4": { "label": "SR", "a": 26.833, "b": 12 },
+		"5": { "label": "BL", "a": 24,     "b": 33.941 },
+		"6": { "label": "BR", "a": 33.941, "b": 24 }
+	},
+	"listener": [0, 0],
+	"operator": [8, -8],
+	"adjust": {}
+}
