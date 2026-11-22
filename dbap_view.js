@@ -10,13 +10,14 @@
 //   dictionary dbap_behave     from dbap_behave.js outlet 2
 //   meters <6 amplitudes>      FL FR SL SR BL BR, linear (e.g. from peakamp~)
 //
-// Mouse (all optional, everything is on the keyboard too):
+// Mouse (all optional, everything is on the keyboard and nanoKONTROL2 too):
 //   click GLIDE/CUT            same as TAB
-//   click a mode box           same as its key
-//   click a unit box           toggle it; shift-click sends it home
+//   click a mode box           same as its number key
+//   click a unit box           toggle it (M); shift-click sends it home (R)
 //
-// Outlet: "key <ascii>" to dbap_behave.js
+// Outlet: "key <ascii>", "toggle <n>", "home <n>" to dbap_behave.js
 
+autowatch = 1;
 inlets = 1;
 outlets = 1;
 
@@ -33,10 +34,11 @@ const C_DIM = [0.5, 0.5, 0.52, 1];
 const C_LIT = [0.95, 0.35, 0.2, 1];
 const C_METER = [0.45, 0.75, 1.0, 1];
 const C_OFF = [0.3, 0.3, 0.32, 1];
+const NUNITS = 8;
 const UNIT_COLS = [
 	[0.95, 0.45, 0.35, 1], [0.95, 0.75, 0.3, 1], [0.6, 0.85, 0.35, 1],
 	[0.3, 0.8, 0.7, 1], [0.4, 0.65, 1.0, 1], [0.65, 0.5, 1.0, 1],
-	[0.95, 0.5, 0.8, 1], [0.85, 0.85, 0.85, 1], [0.7, 0.55, 0.4, 1]
+	[0.95, 0.5, 0.8, 1], [0.85, 0.85, 0.85, 1]
 ];
 
 let st = null;      // dbap_state
@@ -202,7 +204,7 @@ function drawMap(x, y, w, h) {
 		const src = st.sources[id];
 		if (!src.enabled) continue;
 		const n = unitOfSrc[id];
-		const col = n ? UNIT_COLS[n - 1] : C_DIM;
+		const col = n && UNIT_COLS[n - 1] ? UNIT_COLS[n - 1] : C_DIM;
 		const frozen = n && unitInfo[n] && !unitInfo[n].active;
 		const pts = pointsOf(src).map(q => P(q[0], q[1]));
 		setc(col);
@@ -268,10 +270,10 @@ function drawModes(x, y, w, h) {
 
 function drawUnits(x, y, w, h) {
 	if (!bh) return;
-	const bw = w / 9;
+	const bw = w / NUNITS;
 	const us = {};
 	for (const u of toArr(bh.units)) us[u.n] = u;
-	for (let n = 1; n <= 9; n++) {
+	for (let n = 1; n <= NUNITS; n++) {
 		const u = us[n];
 		const bx = x + (n - 1) * bw + 2;
 		const col = UNIT_COLS[n - 1];
@@ -291,7 +293,7 @@ function drawUnits(x, y, w, h) {
 		text("" + n, bx + 10, y + 15, 12, col);
 		text(u.active ? (u.stick ? "stick " + u.stick : "active") : "frozen", bx + 24, y + 15, 9, C_DIM);
 		text(fit(pretty(u.id), 10, bw - 16), bx + 10, y + h - 7, 10, C_TEXT);
-		hits.push({ x: bx, y, w: bw - 4, h, key: 48 + n, unit: n });
+		hits.push({ x: bx, y, w: bw - 4, h, unit: n });
 	}
 }
 
@@ -300,7 +302,7 @@ function drawUnits(x, y, w, h) {
 function onclick(x, y, but, cmd, shift) {
 	for (const b of hits) {
 		if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) {
-			if (b.unit && shift) outlet(0, "key", "!@#$%^&*(".charCodeAt(b.unit - 1));
+			if (b.unit) outlet(0, shift ? "home" : "toggle", b.unit);
 			else outlet(0, "key", b.key);
 			return;
 		}

@@ -16,8 +16,8 @@
 		}
 	},
 	"ensemble2": {
-		"keys": ["keisha_piano", "martin_cl", "martin_bcl", "olive_keys", "olive_vox", "dhaivat_kit", "dhaivat_tabla"],
-		"sticks": { "L": [1, 2, 3], "R": [4, 5, 6, 7] },
+		"keys": ["keisha_piano", "martin_cl", "martin_bcl", "olive_keys", "olive_vox", "dhaivat_kit", "dhaivat_tabla", "yuval_vox"],
+		"sticks": { "L": [1, 2, 3, 4], "R": [5, 6, 7, 8] },
 		"sources": {
 			"keisha_piano":  { "group": "keisha",  "acoustic": true,  "home": [-1.5, 2.5], "width": 0.5,
 			                   "points": [ { "ch": 11, "offset": [-0.5, 0] }, { "ch": 12, "offset": [0.5, 0] } ] },
@@ -30,8 +30,8 @@
 			                               { "ch": 19, "offset": [0, 0] },    { "ch": 20, "offset": [0, 0] } ] },
 			"dhaivat_tabla": { "group": "dhaivat", "acoustic": true,  "home": [1.5, 1.8], "width": 0.5,
 			                   "points": [ { "ch": 21, "offset": [-0.5, 0] }, { "ch": 22, "offset": [0.5, 0] } ] },
-			"yuval_vox":     { "group": "yuval",   "acoustic": false, "home": [0.0, 2.5], "enabled": false,
-			                   "note": "host mic, goes through the mains",
+			"yuval_vox":     { "group": "yuval",   "acoustic": false, "home": [0.0, 2.5],
+			                   "note": "also the host mic: keep him out of the mains while ensemble 2 plays",
 			                   "points": [ { "ch": 23, "offset": [0, 0] } ] }
 		}
 	}

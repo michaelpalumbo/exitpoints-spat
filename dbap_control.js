@@ -58,6 +58,7 @@ let scenes = {};
 let sceneName = "";
 let sources = {};
 let dirty = false;
+let sceneCount = 0;   // bumps on every recall, so listeners can reapply settings
 
 const FT = 0.3048;
 
@@ -132,6 +133,7 @@ function scene(name) {
 		writeSource(s);
 	}
 	sceneName = name;
+	sceneCount++;
 	publish();
 }
 
@@ -333,6 +335,7 @@ function publish() {
 	const sc = scenes[sceneName] || {};
 	stateDict.parse(JSON.stringify({
 		scene: sceneName,
+		sceneCount,
 		keys: sc.keys || [],
 		sticks: sc.sticks || {},
 		sources,

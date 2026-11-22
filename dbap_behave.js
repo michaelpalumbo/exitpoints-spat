@@ -3,27 +3,36 @@
 // Behaviour engine. Moves "units" (a source, or a group of sources) by sending
 // position messages to dbap_control.js about 30 times a second.
 //
-// Units: keys 1-9, defined per scene by "keys" in dbap_scenes.json.
+// Units 1-8 are defined per scene by "keys" in dbap_scenes.json, one per
+// nanoKONTROL2 channel.
 //
-// Keyboard (send ASCII codes in as "key <ascii>", e.g. from [key] -> [prepend key]):
-//   1-9          toggle a unit between active (follows the mode) and frozen (stays put)
-//   shift + 1-9  send that unit home and freeze it there (press its number to resume)
-//   q w e r t y u i   modes 1-8 (see MODE_NAMES)
-//   o            gamepad mode (sticks)
-//   p            hold: active units stop where they are
-//   TAB          toggle glide / cut for changes of mode and state
+// Keyboard ("key <ascii>", from [key] -> [prepend key]):
+//   1-8   modes: stage, drift, orbit, hop, pulse, swarm, sway, perimeter
+//   9     gamepad (sticks)
+//   0     hold: active units stop where they are
+//   TAB   glide / cut for mode and state changes
 //
-// Other messages in:
-//   dictionary dbap_state     state from dbap_control.js (connect its outlet here)
-//   lstick <x> <y>            left stick, -1..1, +y = up
-//   rstick <x> <y>            right stick
-//   speed <mult>              behaviour speed (1 = normal)
-//   glidetime <seconds>       glide length for mode / state changes
-//   unitlevel <n> <dB>        level of unit n (from dbap_nk.js)
+// From dbap_nk.js (or the room view):
+//   toggle <n>                 unit n active (follows the mode) / frozen (stays put)
+//   home <n>                   send unit n home and freeze it there
+//   unitlevel <n> <dB>
+//   unitparam <n> <name> <v>   spread (blur, m), width (x scene width), speed (x),
+//                              accel (0-1, 1 = instant), range (0-1 of the movement)
+//   speed <mult>               global behaviour speed
+//   glidetime <seconds>
+//
+// Other messages:
+//   dictionary dbap_state      from dbap_control.js
+//   lstick <x> <y>, rstick <x> <y>   -1..1, +y = up
+//   saveparams <file.json>, loadparams <file.json>   backup copies of the settings
+//
+// Settings (levels, per-unit parameters, global speed and glide) are kept per
+// scene in dict "dbap_params". Put [dict dbap_params @embed 1] in the patch and
+// save the patch to keep them.
 //
 // Outlets:
-//   0  to dbap_control.js (posq, groupq, flush, slew, level, dump)
-//   1  to dbap_nk.js: "unit <n> <name> <dB>" x 9, then "unitsdone"
+//   0  to dbap_control.js
+//   1  to dbap_nk.js
 //   2  "dictionary dbap_behave" for the room view
 
 autowatch = 1;
@@ -36,10 +45,13 @@ const HOP_SLEW = 3;         // ms, hard cuts (just enough to avoid clicks)
 const STICK_DEAD = 0.12;
 const SECTOR_GLIDE = 0.3;   // s, when a stick changes direction (glide mode only)
 const TAU = Math.PI * 2;
+const NUNITS = 8;
 
-const MODE_KEYS = "qwertyuiop";
+const MODE_KEYS = "1234567890";
 const MODE_NAMES = ["stage", "drift", "orbit", "hop", "pulse", "swarm", "sway", "perimeter", "gamepad", "hold"];
-const SHIFT_NUM = "!@#$%^&*(";
+
+const DEFAULTS = { level: 0, spread: 0.01, width: 1, speed: 1, accel: 1, range: 1 };
+const PARAM_NAMES = ["spread", "width", "speed", "accel", "range"];
 
 let state = null;
 let sig = "";
@@ -55,6 +67,9 @@ let lastMs = Date.now();
 let lastAsk = 0;
 let tickCount = 0;
 let sticks = { L: [0, 0], R: [0, 0] };
+
+let params = null;          // { global: {speed, glide}, scenes: { name: { id: {...} } } }
+let paramsDirty = false;
 
 const task = new Task(tick, this);
 task.interval = TICK_MS;
@@ -72,27 +87,70 @@ function key(a) {
 		publish();
 		return;
 	}
-	const c = String.fromCharCode(a);
-	if (c >= "1" && c <= "9") { toggleUnit(c.charCodeAt(0) - 48); return; }
-	const h = SHIFT_NUM.indexOf(c);
-	if (h >= 0) { homeUnit(h + 1); return; }
-	const m = MODE_KEYS.indexOf(c.toLowerCase());
+	const m = MODE_KEYS.indexOf(String.fromCharCode(a));
 	if (m >= 0) setMode(MODE_NAMES[m]);
 }
 
 function lstick(x, y) { sticks.L = [x, y]; }
 function rstick(x, y) { sticks.R = [x, y]; }
-function glidetime(s) { glideTime = Math.max(0, s); publish(); }
 
-// behaviour time runs at this rate (1 = normal)
-function speed(v) { tempo = Math.max(0.01, v); publish(); }
+function speed(v) {
+	tempo = Math.max(0.01, v);
+	ensureParams();
+	params.global.speed = tempo;
+	paramsDirty = true;
+	publish();
+}
+
+function glidetime(s) {
+	glideTime = Math.max(0, s);
+	ensureParams();
+	params.global.glide = glideTime;
+	paramsDirty = true;
+	publish();
+}
+
+function toggle(n) {
+	const u = unitOf(n);
+	if (!u) return;
+	u.active = !u.active;
+	if (u.active) {
+		startTrans(u, glide ? glideTime : 0);
+	} else {
+		u.hold = u.out.slice();
+		u.trans = null;
+	}
+	outlet(1, "active", n, u.active ? 1 : 0);
+	publish();
+}
+
+function home(n) {
+	const u = unitOf(n);
+	if (!u) return;
+	u.active = false;
+	u.hold = u.home.slice();
+	startTrans(u, glide ? glideTime : 0);
+	resetBehaviour(u);
+	outlet(1, "active", n, 0);
+	publish();
+}
 
 function unitlevel(n, db) {
 	const u = unitOf(n);
 	if (!u) return;
-	u.levelDb = db;
-	const lin = Math.pow(10, db / 20);
-	for (const m of u.members) outlet(0, "level", m, lin);
+	u.p.level = db;
+	applyLevel(u);
+	paramsDirty = true;
+	publish();
+}
+
+function unitparam(n, name, v) {
+	const u = unitOf(n);
+	if (!u || PARAM_NAMES.indexOf(name) < 0) return;
+	u.p[name] = v;
+	if (name === "spread") applySpread(u);
+	if (name === "width") applyWidth(u);
+	paramsDirty = true;
 	publish();
 }
 
@@ -105,22 +163,65 @@ function dictionary(name) {
 		const ys = spk.map(p => p[1]);
 		bounds = { x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys) };
 	}
-	const s = state.scene + "|" + JSON.stringify(state.keys || []) + "|" + JSON.stringify(state.sticks || {});
+	// rebuild on every scene recall (sceneCount), so stored settings are reapplied
+	const s = state.scene + "|" + state.sceneCount + "|" + JSON.stringify(state.keys || []) +
+		"|" + JSON.stringify(state.sticks || {});
 	if (s !== sig) {
 		sig = s;
 		buildUnits();
 	}
 }
 
+// ---- settings storage ----
+
+function ensureParams() {
+	if (params) return;
+	let o = {};
+	try { o = JSON.parse(new Dict("dbap_params").stringify()) || {}; } catch (e) { o = {}; }
+	params = { global: o.global || {}, scenes: o.scenes || {} };
+	if (typeof params.global.speed === "number") tempo = params.global.speed;
+	if (typeof params.global.glide === "number") glideTime = params.global.glide;
+}
+
+function writeParams() {
+	new Dict("dbap_params").parse(JSON.stringify(params));
+	paramsDirty = false;
+}
+
+function saveparams(file) {
+	ensureParams();
+	writeParams();
+	new Dict("dbap_params").export_json(file);
+	post("dbap_behave: settings saved to " + file + "\n");
+}
+
+function loadparams(file) {
+	const d = new Dict("dbap_params");
+	d.import_json(file);
+	params = null;
+	ensureParams();
+	sig = "";        // force a rebuild so the loaded settings apply
+	if (state) dictionary("dbap_state");
+	post("dbap_behave: settings loaded from " + file + "\n");
+}
+
 // ---- units ----
 
 function buildUnits() {
+	ensureParams();
+	if (!state.scene) {
+		units = [];
+		sendUnits();
+		publish();
+		return;
+	}
 	const old = {};
 	for (const u of units) old[u.id] = u;
-	const keys = toArr(state.keys).slice(0, 9);
+	const keys = toArr(state.keys).slice(0, NUNITS);
 	const st = state.sticks || {};
 	const L = toArr(st.L);
 	const R = toArr(st.R);
+	const sp = params.scenes[state.scene] = params.scenes[state.scene] || {};
 	units = [];
 	keys.forEach((id, i) => {
 		const n = i + 1;
@@ -130,7 +231,7 @@ function buildUnits() {
 			kind = "group";
 			members = Object.keys(state.sources).filter(k => state.sources[k].group === id);
 			if (!members.length) {
-				post("dbap_behave: key " + n + ": no source or group called " + id + "\n");
+				post("dbap_behave: unit " + n + ": no source or group called " + id + "\n");
 				return;
 			}
 		}
@@ -138,52 +239,56 @@ function buildUnits() {
 		const home = [avg(ms.map(s => s.home[0])), avg(ms.map(s => s.home[1]))];
 		const pos = [avg(ms.map(s => s.x)), avg(ms.map(s => s.y))];
 		const prev = old[id];
+		sp[id] = Object.assign({}, DEFAULTS, sp[id] || {});
 		const u = {
 			n, id, kind, members,
 			acoustic: ms.some(s => s.acoustic),
+			hasWidth: ms.some(s => toArr(s.points).length > 1),
+			baseWidth: {},
+			p: sp[id],
 			home,
 			out: pos,
+			pos: pos.slice(),
+			vel: [0, 0],
 			hold: pos.slice(),
 			active: prev ? prev.active : true,
-			levelDb: prev ? prev.levelDb : 0,
 			stick: L.indexOf(n) >= 0 ? "L" : (R.indexOf(n) >= 0 ? "R" : null),
 			trans: null,
 			slew: -1,
 			sector: -1,
+			T: 0,
 			st: {}
 		};
+		for (const m of members) u.baseWidth[m] = state.sources[m].width === undefined ? 1 : state.sources[m].width;
 		resetBehaviour(u);
 		units.push(u);
 	});
-	sendNames();
+	for (const u of units) {
+		applyLevel(u);
+		applySpread(u);
+		applyWidth(u);
+	}
+	paramsDirty = true;
+	sendUnits();
 	publish();
+}
+
+function applyLevel(u) {
+	const lin = Math.pow(10, u.p.level / 20);
+	for (const m of u.members) outlet(0, "level", m, lin);
+}
+
+function applySpread(u) {
+	for (const m of u.members) outlet(0, "blur", m, u.p.spread);
+}
+
+function applyWidth(u) {
+	if (!u.hasWidth) return;
+	for (const m of u.members) outlet(0, "width", m, u.baseWidth[m] * u.p.width);
 }
 
 function unitOf(n) {
 	return units.find(u => u.n === n);
-}
-
-function toggleUnit(n) {
-	const u = unitOf(n);
-	if (!u) return;
-	u.active = !u.active;
-	if (u.active) {
-		startTrans(u, glide ? glideTime : 0);
-	} else {
-		u.hold = u.out.slice();
-		u.trans = null;
-	}
-	publish();
-}
-
-function homeUnit(n) {
-	const u = unitOf(n);
-	if (!u) return;
-	u.active = false;
-	u.hold = u.home.slice();
-	startTrans(u, glide ? glideTime : 0);
-	resetBehaviour(u);
-	publish();
 }
 
 function setMode(name) {
@@ -227,12 +332,21 @@ function tick() {
 	}
 	T += dt * tempo;
 
-	const act = units.filter(u => u.active);
 	let moved = false;
 	for (const u of units) {
+		u.T += dt * tempo * u.p.speed;
 		let tg;
-		if (u.active) tg = target(u, act.indexOf(u), act.length);
-		else tg = { x: u.hold[0], y: u.hold[1], slew: SMOOTH_SLEW };
+		if (u.active) {
+			// fixed slot by unit number, so toggling one unit never moves the others
+			tg = target(u, u.n - 1, units.length);
+			if (mode !== "hold") {
+				// range: how far the movement reaches away from home
+				tg.x = u.home[0] + (tg.x - u.home[0]) * u.p.range;
+				tg.y = u.home[1] + (tg.y - u.home[1]) * u.p.range;
+			}
+		} else {
+			tg = { x: u.hold[0], y: u.hold[1], slew: SMOOTH_SLEW };
+		}
 
 		let x = tg.x, y = tg.y, slew = tg.slew;
 		if (u.trans) {
@@ -249,9 +363,26 @@ function tick() {
 		x = clamp(x, bounds.x0, bounds.x1);
 		y = clamp(y, bounds.y0, bounds.y1);
 
+		// acceleration: 1 = jump straight to the target, lower = the unit has weight
+		if (u.p.accel >= 0.999) {
+			u.pos = [x, y];
+			u.vel = [0, 0];
+		} else {
+			const amax = 0.3 * Math.pow(200, u.p.accel);   // m/s^2, 0.3 to 60
+			const want = [(x - u.pos[0]) * 4, (y - u.pos[1]) * 4];
+			let dv = [want[0] - u.vel[0], want[1] - u.vel[1]];
+			const m = Math.hypot(dv[0], dv[1]), lim = amax * dt;
+			if (m > lim) dv = [dv[0] * lim / m, dv[1] * lim / m];
+			u.vel = [u.vel[0] + dv[0], u.vel[1] + dv[1]];
+			u.pos = [u.pos[0] + u.vel[0] * dt, u.pos[1] + u.vel[1] * dt];
+			x = u.pos[0];
+			y = u.pos[1];
+			slew = SMOOTH_SLEW;
+		}
+
 		if (slew !== u.slew) {
 			u.slew = slew;
-			for (const m of u.members) outlet(0, "slew", m, slew);
+			for (const mbr of u.members) outlet(0, "slew", mbr, slew);
 		}
 		if (Math.abs(x - u.out[0]) > 1e-4 || Math.abs(y - u.out[1]) > 1e-4) {
 			u.out = [x, y];
@@ -260,17 +391,21 @@ function tick() {
 		}
 	}
 	if (moved) outlet(0, "flush");
-	if (++tickCount % 3 === 0) publish();
+	tickCount++;
+	if (tickCount % 3 === 0) publish();
+	if (tickCount % 15 === 0 && paramsDirty) writeParams();
 }
 
 // ---- behaviours ----
-// Each returns where a unit should be now. i = its index among active units, n = how many.
+// Each returns where a unit should be now. i = its slot (unit number - 1),
+// n = how many units the scene has. u.T is the unit's own clock (its speed).
 // Acoustic units move less and more slowly (amp and tempo factors).
 
 function target(u, i, n) {
 	const H = u.home;
 	const A = u.acoustic ? 0.6 : 1;
 	const Tm = u.acoustic ? 0.5 : 1;
+	const t = u.T;
 	const ph = u.st.ph, fr = u.st.fr;
 	const cx = (bounds.x0 + bounds.x1) / 2, cy = (bounds.y0 + bounds.y1) / 2;
 	const hx = (bounds.x1 - bounds.x0) / 2, hy = (bounds.y1 - bounds.y0) / 2;
@@ -285,10 +420,10 @@ function target(u, i, n) {
 
 	case "drift": {
 		// slow wandering around home
-		const R = 1.8 * A, t = T * Tm;
+		const R = 1.8 * A, tt = t * Tm;
 		return at(
-			H[0] + R * (0.6 * Math.sin(TAU * fr[0] * t + ph[0]) + 0.4 * Math.sin(TAU * fr[1] * t + ph[1])),
-			H[1] + R * (0.6 * Math.sin(TAU * fr[2] * t + ph[2]) + 0.4 * Math.sin(TAU * fr[3] * t + ph[3])));
+			H[0] + R * (0.6 * Math.sin(TAU * fr[0] * tt + ph[0]) + 0.4 * Math.sin(TAU * fr[1] * tt + ph[1])),
+			H[1] + R * (0.6 * Math.sin(TAU * fr[2] * tt + ph[2]) + 0.4 * Math.sin(TAU * fr[3] * tt + ph[3])));
 	}
 
 	case "orbit": {
@@ -296,7 +431,7 @@ function target(u, i, n) {
 		const rmax = Math.min(hx, hy) * 0.9;
 		const r = Math.min(rmax, (0.35 + 0.3 * (i % 3)) * rmax / 0.95) * (u.acoustic ? 0.8 : 1);
 		const dir = i % 2 ? -1 : 1;
-		const a = TAU * i / n + dir * TAU * T * Tm / 40;
+		const a = TAU * i / n + dir * TAU * t * Tm / 40;
 		return at(cx + r * Math.cos(a), cy + r * Math.sin(a));
 	}
 
@@ -305,45 +440,45 @@ function target(u, i, n) {
 		return hop(u, (2 + 4 * rnd0(u)) / Tm);
 
 	case "pulse": {
-		// everyone cuts together on a shared beat, each to a different speaker
+		// cuts on a beat, each unit on a different speaker (in sync while speeds match)
 		const P = 1.5;
-		const beat = Math.floor(T * Tm / P);
+		const beat = Math.floor(t * Tm / P);
 		if (!spk.length) return at(H[0], H[1]);
 		const p = spk[(beat + i) % spk.length];
 		return { x: p[0], y: p[1], slew: HOP_SLEW };
 	}
 
 	case "swarm": {
-		// a shared centre wanders the room; units buzz around it
+		// a shared centre wanders the room (global clock); units buzz around it (own clock)
 		const C = [cx + hx * 0.6 * Math.sin(TAU * 0.03 * T + 1), cy + hy * 0.6 * Math.sin(TAU * 0.021 * T)];
-		const x = C[0] + 0.7 * Math.sin(TAU * fr[0] * 2 * T + ph[0]);
-		const y = C[1] + 0.7 * Math.sin(TAU * fr[2] * 2 * T + ph[2]);
+		const x = C[0] + 0.7 * Math.sin(TAU * fr[0] * 2 * t + ph[0]);
+		const y = C[1] + 0.7 * Math.sin(TAU * fr[2] * 2 * t + ph[2]);
 		if (u.acoustic) return at(x + (H[0] - x) * 0.4, y + (H[1] - y) * 0.4);
 		return at(x, y);
 	}
 
 	case "sway": {
 		// front to back and back again, ~12 s, staggered
-		const th = TAU * T * Tm / 12 + TAU * i / n;
+		const th = TAU * t * Tm / 12 + TAU * i / n;
 		const depth = (H[1] - bounds.y0) * A;
 		return at(H[0], H[1] - (1 - Math.cos(th)) / 2 * depth);
 	}
 
 	case "perimeter": {
 		// spread evenly around the walls, slowly rotating (one lap ~90 s)
-		const s = ((i / n + T * Tm / 90) % 1 + 1) % 1;
+		const s = ((i / n + t * Tm / 90) % 1 + 1) % 1;
 		const p = perimeterPoint(s);
 		if (u.acoustic) return at(p[0] + (H[0] - p[0]) * 0.3, p[1] + (H[1] - p[1]) * 0.3);
 		return at(p[0], p[1]);
 	}
 
 	case "gamepad":
-		return gamepad(u, H, A, Tm);
+		return gamepad(u, H, A, Tm, t);
 	}
 	return at(H[0], H[1]);
 }
 
-function gamepad(u, H, A, Tm) {
+function gamepad(u, H, A, Tm, t) {
 	if (!u.stick) return at(H[0], H[1]);   // not on a stick: home
 	const v = sticks[u.stick];
 	const len = Math.hypot(v[0], v[1]);
@@ -362,7 +497,7 @@ function gamepad(u, H, A, Tm) {
 	switch (sector) {
 	case 0: {
 		// up: pulled toward the middle, circling it
-		const c = [0.6 * Math.cos(TAU * 0.08 * T + ph[0]), 0.6 * Math.sin(TAU * 0.08 * T + ph[0])];
+		const c = [0.6 * Math.cos(TAU * 0.08 * t + ph[0]), 0.6 * Math.sin(TAU * 0.08 * t + ph[0])];
 		const k = mag * A;
 		return at(H[0] + (c[0] - H[0]) * k, H[1] + (c[1] - H[1]) * k);
 	}
@@ -370,13 +505,13 @@ function gamepad(u, H, A, Tm) {
 		// down: fast jitter around home, wider as you push
 		const R = 2.0 * A * mag;
 		return at(
-			H[0] + R * (0.6 * Math.sin(TAU * fr[0] * 3 * T + ph[0]) + 0.4 * Math.sin(TAU * fr[1] * 3 * T + ph[1])),
-			H[1] + R * (0.6 * Math.sin(TAU * fr[2] * 3 * T + ph[2]) + 0.4 * Math.sin(TAU * fr[3] * 3 * T + ph[3])));
+			H[0] + R * (0.6 * Math.sin(TAU * fr[0] * 3 * t + ph[0]) + 0.4 * Math.sin(TAU * fr[1] * 3 * t + ph[1])),
+			H[1] + R * (0.6 * Math.sin(TAU * fr[2] * 3 * t + ph[2]) + 0.4 * Math.sin(TAU * fr[3] * 3 * t + ph[3])));
 	}
 	case 1: {
 		// right: clockwise orbit around home, radius grows with the push
 		const r = 2.0 * A * mag;
-		const a = ph[0] - TAU * T * Tm / 6;
+		const a = ph[0] - TAU * t * Tm / 6;
 		return at(H[0] + r * Math.cos(a), H[1] + r * Math.sin(a));
 	}
 	case 3:
@@ -388,11 +523,11 @@ function gamepad(u, H, A, Tm) {
 
 function hop(u, interval) {
 	if (!spk.length) return at(u.home[0], u.home[1]);
-	if (u.st.hopNext === null || T >= u.st.hopNext) {
+	if (u.st.hopNext === null || u.T >= u.st.hopNext) {
 		let k = Math.floor(rnd(u) * spk.length);
 		if (k === u.st.hopCur) k = (k + 1 + Math.floor(rnd(u) * (spk.length - 1))) % spk.length;
 		u.st.hopCur = k;
-		u.st.hopNext = T + interval;
+		u.st.hopNext = u.T + interval;
 	}
 	const p = spk[u.st.hopCur];
 	return { x: p[0], y: p[1], slew: HOP_SLEW };
@@ -423,11 +558,17 @@ function at(x, y) {
 
 // ---- output ----
 
-function sendNames() {
-	for (let n = 1; n <= 9; n++) {
+function sendUnits() {
+	for (let n = 1; n <= NUNITS; n++) {
 		const u = unitOf(n);
-		outlet(1, "unit", n, u ? u.id : "-", u ? u.levelDb : 0);
+		if (!u) {
+			outlet(1, "unit", n, "-", 0, 0, 0, DEFAULTS.spread, 1, 1, 1, 1);
+			continue;
+		}
+		outlet(1, "unit", n, u.id, u.hasWidth ? 1 : 0, u.active ? 1 : 0,
+			u.p.level, u.p.spread, u.p.width, u.p.speed, u.p.accel, u.p.range);
 	}
+	outlet(1, "globals", tempo, glideTime);
 	outlet(1, "unitsdone");
 }
 
@@ -443,7 +584,7 @@ function publish() {
 		sticks,
 		units: units.map(u => ({
 			n: u.n, id: u.id, kind: u.kind, members: u.members,
-			active: u.active ? 1 : 0, stick: u.stick || "", levelDb: u.levelDb
+			active: u.active ? 1 : 0, stick: u.stick || "", p: u.p
 		}))
 	}));
 	outlet(2, "dictionary", "dbap_behave");
