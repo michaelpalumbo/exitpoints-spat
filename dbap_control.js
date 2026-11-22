@@ -20,6 +20,12 @@
 //   sethome <id>                make the current position its home
 //   dump                        republish state
 //
+// Batched (for dbap_behave.js, ~30 Hz): these update the buffer but don't
+// republish; send "flush" after a batch.
+//   posq <id> <x> <y>
+//   groupq <gid> <x> <y>
+//   flush
+//
 // Room / calibration (room units, normally feet; inches as decimals):
 //   loadroom <file.json>        load measurements
 //   saveroom <file.json>        save measurements (plus computed values)
@@ -51,6 +57,7 @@ const stateDict = new Dict("dbap_state");
 let scenes = {};
 let sceneName = "";
 let sources = {};
+let dirty = false;
 
 const FT = 0.3048;
 
@@ -141,10 +148,33 @@ function home(id) { edit(id, s => { s.x = s.home[0]; s.y = s.home[1]; }); }
 function sethome(id) { edit(id, s => { s.home = [s.x, s.y]; }); }
 
 function group(gid, x, y) {
+	if (moveGroup(gid, x, y)) publish();
+}
+
+function posq(id, x, y) {
+	const s = sources[id];
+	if (!s) return;
+	s.x = x;
+	s.y = y;
+	writeSource(s);
+	dirty = true;
+}
+
+function groupq(gid, x, y) {
+	if (moveGroup(gid, x, y)) dirty = true;
+}
+
+function flush() {
+	if (!dirty) return;
+	dirty = false;
+	publish();
+}
+
+function moveGroup(gid, x, y) {
 	const members = Object.values(sources).filter(s => s.group === gid);
 	if (!members.length) {
 		error("dbap: no group " + gid + "\n");
-		return;
+		return false;
 	}
 	const cx = members.reduce((a, s) => a + s.x, 0) / members.length;
 	const cy = members.reduce((a, s) => a + s.y, 0) / members.length;
@@ -153,7 +183,7 @@ function group(gid, x, y) {
 		s.y += y - cy;
 		writeSource(s);
 	}
-	publish();
+	return true;
 }
 
 // ---- room / calibration ----
@@ -300,8 +330,11 @@ function writeSpeakers() {
 
 function publish() {
 	const k = room.units === "m" ? 1 : FT;
+	const sc = scenes[sceneName] || {};
 	stateDict.parse(JSON.stringify({
 		scene: sceneName,
+		keys: sc.keys || [],
+		sticks: sc.sticks || {},
 		sources,
 		speakers: speakers.map((p, i) => ({
 			n: i + 1,

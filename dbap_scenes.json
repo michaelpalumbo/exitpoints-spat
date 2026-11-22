@@ -1,5 +1,7 @@
 {
 	"ensemble1": {
+		"keys": ["rich_headset", "rich_bowls", "tia_gtr", "tia_vox", "samiul_gtr", "bilal_gtr", "bilal_tape", "michael_piano"],
+		"sticks": { "L": [1, 2, 3, 4], "R": [5, 6, 7, 8] },
 		"sources": {
 			"rich_headset":  { "group": "rich",   "acoustic": false, "home": [-1.5, 2.5], "points": [ { "ch": 1, "offset": [0, 0] } ] },
 			"rich_bowls":    { "group": "rich",   "acoustic": true,  "home": [-1.5, 2.0], "points": [ { "ch": 2, "offset": [0, 0] } ] },
@@ -14,6 +16,8 @@
 		}
 	},
 	"ensemble2": {
+		"keys": ["keisha_piano", "martin_cl", "martin_bcl", "olive_keys", "olive_vox", "dhaivat_kit", "dhaivat_tabla"],
+		"sticks": { "L": [1, 2, 3], "R": [4, 5, 6, 7] },
 		"sources": {
 			"keisha_piano":  { "group": "keisha",  "acoustic": true,  "home": [-1.5, 2.5], "width": 0.5,
 			                   "points": [ { "ch": 11, "offset": [-0.5, 0] }, { "ch": 12, "offset": [0.5, 0] } ] },
