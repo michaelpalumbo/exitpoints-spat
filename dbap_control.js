@@ -23,6 +23,7 @@
 // Batched (for dbap_behave.js, ~30 Hz): these update the buffer but don't
 // republish; send "flush" after a batch.
 //   posq <id> <x> <y>
+//   rotq <id> <deg>
 //   groupq <gid> <x> <y>
 //   flush
 //
@@ -158,6 +159,14 @@ function posq(id, x, y) {
 	if (!s) return;
 	s.x = x;
 	s.y = y;
+	writeSource(s);
+	dirty = true;
+}
+
+function rotq(id, deg) {
+	const s = sources[id];
+	if (!s) return;
+	s.rotation = deg;
 	writeSource(s);
 	dirty = true;
 }

@@ -4,32 +4,37 @@
 //
 //   fader     unit level, -30 dB to +6 dB (unity about 5/6 up). The bottom is
 //             not off: there is no mute anywhere on the controller.
-//   M         toggle the unit active / frozen (LED lit = active)
+//   M         toggle the unit frozen / moving in the current mode
+//             (LED lit = frozen; everything starts frozen)
 //   R         send the unit home and freeze it there
-//   S         unused
+//   S         tap:  select the unit for assigning a behaviour (assign mode, key 0);
+//                   the LED flashes slowly while selected. Tap again to deselect.
+//             hold 2 s: clear the unit's loop (the LED flashes fast while held;
+//                   let go early to keep the loop). Hold several to clear several.
+//             Otherwise the LED is lit when the unit has a loop.
 //   knob      the unit's value for the current page:
-//     <<   (43)  spread    point source to diffuse (spatial blur, 1 cm to 4 m)
-//     >>   (44)  width     stereo / multi-mic width, x0 to x2 (units with one mic: unused)
-//     STOP (42)  range     how far the movement reaches from home, 0-100%
-//     PLAY (41)  speed     the unit's movement speed, x1/4 to x4
-//     REC  (45)  accel     1 = instant; lower gives the unit weight (it swings into
-//                          place and hard cuts become swoops)
+//     <<   (43)  spread    per unit: point source to diffuse (1 cm to 4 m)
+//     >>   (44)  width     per unit: stereo / multi-mic width, x0 to x5
+//     STOP (42)  range     per unit, per behaviour: how far it moves from home
+//     PLAY (41)  speed     per unit, per behaviour: x1/4 to x6
+//     REC  (45)  accel     per unit, per behaviour: 1 = instant, lower = heavier
 //     CYCLE (46) global    knob 1 overall speed, knob 2 glide time
 //
-// Knobs and faders pick up (same rule as nanoKontrolModes.js): nothing happens
-// until the control reaches or passes the current value. Pickup resets on page
-// and scene changes.
+// Knobs and faders pick up (same rule as nanoKontrolModes.js). Pickup resets on
+// page, mode and scene changes.
 //
 // Inlet:
-//   <value> <cc>        from [ctlin] (value and CC packed)
-//   screen <value> <cc> from nk_screen.js (sets values directly, no pickup)
-//   unit <n> <id> <hasWidth> <active> <dB> <spread> <width> <speed> <accel> <range>
-//   globals <speed> <glide>, active <n> <0/1>, unitsdone     from dbap_behave.js
+//   <value> <cc>          from [ctlin] (value and CC packed)
+//   screen <value> <cc>   from nk_screen.js (sets values directly, no pickup)
+//   from dbap_behave.js:
+//     unit <n> <id> <hasWidth> <active> <dB> <spread> <width> <speed> <accel> <range> <hasLoop> <behaviour>
+//     behmode <name>, globals <speed> <glide>, active <n> <0/1>, hasloop <n> <0/1>,
+//     selected <n> <0/1>, unitsdone
 //
 // Outlets:
 //   0  to dbap_behave.js
 //   1  to nk_screen.js
-//   2  LED pairs "value cc" for [ctlout]
+//   2  LED pairs "value cc" -> [unpack 0 0] -> [ctlout "nanoKONTROL2 CTRL"]
 
 autowatch = 1;
 inlets = 1;
@@ -39,6 +44,10 @@ const N = 8;
 const KNOB0 = 8, S0 = 32, M0 = 48, R0 = 64;
 const PICK = 0.03;
 const DB_LO = -30, DB_HI = 6;
+const CLEAR_MS = 2000;       // hold S this long to clear a loop
+const TAP_MS = 500;          // a shorter S press is a tap (select)
+const FAST_MS = 100;         // flash while holding S to clear
+const SLOW_MS = 300;         // flash while selected
 
 const PAGES = [
 	{ cc: 43, name: "spread" },
@@ -50,15 +59,23 @@ const PAGES = [
 ];
 
 let page = 0;
+let mode = "manual";
 const U = [];
 for (let i = 0; i < N; i++) {
-	U.push({ id: "", hasWidth: 0, active: 0, level: 0, spread: 0.01, width: 1, speed: 1, accel: 1, range: 1 });
+	U.push({ id: "", hasWidth: 0, active: 0, level: 0, spread: 0.01, width: 1,
+		speed: 1, accel: 1, range: 1, hasLoop: 0, beh: "manual", selected: 0 });
 }
 let gSpeed = 1, gGlide = 2;
 
 const fPos = new Array(N).fill(-1), fPicked = new Array(N).fill(0);
 const kPos = new Array(N).fill(-1), kPicked = new Array(N).fill(0);
-const rHeld = new Array(N).fill(0);
+const sDown = new Array(N).fill(0);    // when each S went down (0 = up)
+const sDone = new Array(N).fill(0);    // this press already cleared the loop
+const ledState = {};
+
+const flasher = new Task(flash, this);
+flasher.interval = 50;
+flasher.repeat();
 
 function loadbang() {
 	refresh();
@@ -66,23 +83,42 @@ function loadbang() {
 
 // ---- from dbap_behave ----
 
-function unit(n, id, hasWidth, active, db, spread, width, speed, accel, range) {
+function unit(n, id, hasWidth, active, db, spread, width, speed, accel, range, hasLoop, beh) {
 	const u = U[n - 1];
 	if (!u) return;
 	u.id = id === "-" ? "" : String(id);
-	Object.assign(u, { hasWidth, active, level: db, spread, width, speed, accel, range });
+	Object.assign(u, { hasWidth, active, level: db, spread, width, speed, accel, range,
+		hasLoop: hasLoop ? 1 : 0, beh: beh === "-" ? "" : String(beh) });
+	if (!u.id) u.selected = 0;
 }
+
+function behmode(m) { mode = String(m); }
 
 function globals(sp, gl) {
 	gSpeed = sp;
 	gGlide = gl;
+	display();
 }
 
 function active(n, on) {
 	const u = U[n - 1];
 	if (!u) return;
 	u.active = on ? 1 : 0;
-	led(M0 + n - 1, u.active);
+	led(M0 + n - 1, !u.active);
+	labels();
+}
+
+function hasloop(n, on) {
+	const u = U[n - 1];
+	if (!u) return;
+	u.hasLoop = on ? 1 : 0;
+	labels();
+}
+
+function selected(n, on) {
+	const u = U[n - 1];
+	if (!u) return;
+	u.selected = on ? 1 : 0;
 	labels();
 }
 
@@ -90,6 +126,7 @@ function unitsdone() {
 	for (let i = 0; i < N; i++) { fPicked[i] = 0; kPicked[i] = 0; }
 	refresh();
 }
+
 
 // ---- controller ----
 
@@ -106,7 +143,7 @@ function list(v, cc) {
 			page = pg;
 			for (let i = 0; i < N; i++) kPicked[i] = 0;
 		}
-		pageLeds();   // also relights after the controller turns the LED off on release
+		pageLeds(true);   // also relights after the controller turns the LED off on release
 		display();
 		return;
 	}
@@ -114,19 +151,30 @@ function list(v, cc) {
 	if (cc >= M0 && cc < M0 + N) {
 		const n = cc - M0;
 		if (on && U[n].id) outlet(0, "toggle", n + 1);
-		else led(cc, U[n].active);   // release: put the LED back to the unit's state
+		else led(cc, U[n].id && !U[n].active, true);   // release: back to the unit's state
 		return;
 	}
 
 	if (cc >= R0 && cc < R0 + N) {
 		const n = cc - R0;
-		rHeld[n] = on ? 1 : 0;
 		if (on && U[n].id) outlet(0, "home", n + 1);
-		led(cc, on && U[n].id ? 1 : 0);
+		led(cc, on && U[n].id ? 1 : 0, true);
 		return;
 	}
 
-	if (cc >= S0 && cc < S0 + N) led(cc, 0);   // unused: keep dark
+	if (cc >= S0 && cc < S0 + N) {
+		const n = cc - S0;
+		if (!U[n].id) return;
+		if (on) {
+			sDown[n] = Date.now();
+			sDone[n] = 0;
+		} else {
+			const held = sDown[n] ? Date.now() - sDown[n] : 0;
+			sDown[n] = 0;
+			if (!sDone[n] && held < TAP_MS) outlet(0, "select", n + 1);
+		}
+		flash();
+	}
 }
 
 function screen(v, cc) {
@@ -147,6 +195,33 @@ function screen(v, cc) {
 		return;
 	}
 	list(v, cc);
+}
+
+// S buttons: hold-to-clear timing and all the flashing
+function flash() {
+	const now = Date.now();
+	for (let n = 0; n < N; n++) {
+		const u = U[n];
+		let on;
+		if (!u.id) {
+			on = 0;
+		} else if (sDown[n] && u.hasLoop && !sDone[n]) {
+			if (now - sDown[n] >= CLEAR_MS) {
+				sDone[n] = 1;
+				outlet(0, "clearloop", n + 1);
+				on = 0;
+			} else {
+				on = Math.floor((now - sDown[n]) / FAST_MS) % 2 === 0;
+			}
+		} else if (u.selected) {
+			on = Math.floor(now / SLOW_MS) % 2 === 0;
+		} else if (sDown[n]) {
+			on = 1;
+		} else {
+			on = u.hasLoop;
+		}
+		led(S0 + n, on);
+	}
 }
 
 function hwFader(n, pos) {
@@ -194,7 +269,7 @@ function knobNorm(k) {
 	const u = U[k];
 	if (!u.id) return -1;
 	if (name === "spread") return Math.log(u.spread / 0.01) / Math.log(400);
-	if (name === "width") return u.hasWidth ? u.width / 2 : -1;
+	if (name === "width") return u.hasWidth ? u.width / 5 : -1;
 	if (name === "range") return u.range;
 	if (name === "speed") return speedNorm(u.speed);
 	if (name === "accel") return u.accel;
@@ -211,7 +286,7 @@ function setKnob(k, v) {
 	const u = U[k];
 	let val;
 	if (name === "spread") val = 0.01 * Math.pow(400, v);
-	else if (name === "width") val = v * 2;
+	else if (name === "width") val = v * 5;
 	else if (name === "range") val = v;
 	else if (name === "speed") val = speedOf(v);
 	else if (name === "accel") val = v > 0.97 ? 1 : v;   // a small detent at the top: instant
@@ -236,39 +311,53 @@ function knobText(k) {
 function knobName(k) {
 	const name = PAGES[page].name;
 	if (name === "global") return k === 0 ? "speed" : (k === 1 ? "glide" : "-");
-	return knobNorm(k) < 0 ? "-" : name;
+	if (knobNorm(k) < 0) return "-";
+	// in assign mode, say which behaviour this unit's range / speed / accel belong to
+	if (mode === "assign" && (name === "range" || name === "speed" || name === "accel")) return U[k].beh;
+	return name;
 }
 
 // ---- scaling ----
 
 function dbOf(p) { return DB_LO + Math.max(0, Math.min(1, p)) * (DB_HI - DB_LO); }
 function posOfDb(db) { return (Math.max(DB_LO, Math.min(DB_HI, db)) - DB_LO) / (DB_HI - DB_LO); }
-function speedOf(v) { return Math.pow(2, v * 4 - 2); }
-function speedNorm(s) { return (Math.log(s) / Math.LN2 + 2) / 4; }
+// x1/4 to x6 on a log scale (x1 sits a bit left of centre)
+function speedOf(v) { return 0.25 * Math.pow(24, v); }
+function speedNorm(s) { return Math.log(Math.max(0.25, s) / 0.25) / Math.log(24); }
 function glideOf(v) { return 0.2 * Math.pow(50, v); }
 function glideNorm(s) { return Math.log(Math.max(0.2, s) / 0.2) / Math.log(50); }
 
 // ---- LEDs and screen ----
 
-function led(cc, on) {
+// sends only changes unless forced (the flasher runs every 50 ms)
+function led(cc, on, force) {
 	const v = on ? 127 : 0;
+	if (!force && ledState[cc] === v) return;
+	ledState[cc] = v;
 	outlet(2, v, cc);
 	outlet(1, v, cc);
 }
 
-function pageLeds() {
-	PAGES.forEach((p, i) => led(p.cc, i === page));
+function pageLeds(force) {
+	PAGES.forEach((p, i) => led(p.cc, i === page, force));
 }
 
 function labels() {
 	for (let n = 0; n < N; n++) {
-		const has = !!U[n].id;
-		outlet(1, "btn", S0 + n, "");
-		outlet(1, "btn", M0 + n, has ? (U[n].active ? "active" : "frozen") : "");
+		const u = U[n];
+		const has = !!u.id;
+		let sl = "";
+		if (has && u.selected) sl = "selected";
+		else if (has && u.hasLoop) sl = "loop";
+		outlet(1, "btn", S0 + n, sl);
+		outlet(1, "btn", M0 + n, has ? (u.active ? "moving" : "frozen") : "");
 		outlet(1, "btn", R0 + n, has ? "home" : "");
 	}
 	for (const p of PAGES) outlet(1, "btn", p.cc, p.name);
 	for (const cc of [58, 59, 60, 61, 62]) outlet(1, "btn", cc, "");
+	// range / speed / accel belong to the behaviour: box them and say which
+	outlet(1, "group", mode === "assign" ? "each unit's behaviour" : mode + " settings");
+	outlet(1, "caption", "knobs");
 }
 
 function display() {
@@ -287,11 +376,11 @@ function display() {
 
 function refresh() {
 	labels();
-	pageLeds();
+	pageLeds(true);
 	for (let n = 0; n < N; n++) {
-		led(M0 + n, U[n].id ? U[n].active : 0);
-		led(R0 + n, 0);
-		led(S0 + n, 0);
+		led(M0 + n, U[n].id && !U[n].active, true);
+		led(R0 + n, 0, true);
 	}
+	flash();
 	display();
 }

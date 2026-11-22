@@ -14,6 +14,9 @@
 //   fader is. The hardware fader takes over once the bar reaches the line.
 //   btn <cc> <label>
 //   mode <name...>
+//   caption <text>      the small label above the mode line (default MODE)
+//   group <text>        box the three transport buttons STOP, PLAY, REC and label
+//                       them (e.g. "orbit settings"); empty text removes the box
 //   <value> <cc>        an LED message (the same lists that go to [ctlout])
 //
 // Outlet: "screen <value> <cc>" to nanoKontrolModes.js and nk_delete.js.
@@ -57,6 +60,9 @@ var faderText = ["", "", "", "", "", "", "", ""];
 var led = {};
 var label = {};
 var modeName = "";
+var captionText = "MODE";
+var groupText = "";
+var GROUP_CCS = [42, 41, 45]; // STOP, PLAY, REC: boxed together by "group"
 
 // layout, in design coordinates
 var controls = [];
@@ -137,6 +143,20 @@ function mode() {
 	mgraphics.redraw();
 }
 
+function caption() {
+	var a = [];
+	for (var i = 0; i < arguments.length; i++) a.push(str(arguments[i]));
+	captionText = a.join(" ");
+	mgraphics.redraw();
+}
+
+function group() {
+	var a = [];
+	for (var i = 0; i < arguments.length; i++) a.push(str(arguments[i]));
+	groupText = a.join(" ");
+	mgraphics.redraw();
+}
+
 // LED: "value cc"
 function list(v, cc) {
 	if (cc === undefined) return;
@@ -212,9 +232,13 @@ function drawKnob(o) {
 	mgraphics.arc(o.cx, o.cy, o.r, A0, A1);
 	mgraphics.stroke();
 	if (active) {
+		var av = A0 + (A1 - A0) * Math.max(0, Math.min(1, p));
 		setc(C_VALUE);
-		mgraphics.arc(o.cx, o.cy, o.r, A0, A0 + (A1 - A0) * Math.max(0, Math.min(1, p)));
+		mgraphics.arc(o.cx, o.cy, o.r, A0, av);
 		mgraphics.stroke();
+		// a dot at the value, so the knob shows a value even at 0
+		mgraphics.arc(o.cx + Math.cos(av) * o.r, o.cy + Math.sin(av) * o.r, 3.5, 0, 2 * Math.PI);
+		mgraphics.fill();
 	}
 	// where the hardware knob physically is
 	if (knobPhys[k] >= 0) {
@@ -274,6 +298,23 @@ function drawButton(o) {
 	}
 }
 
+// a box around STOP, PLAY and REC with a label under them
+function drawGroup() {
+	var x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+	for (var i = 0; i < controls.length; i++) {
+		var o = controls[i];
+		if (o.type !== "btn" || GROUP_CCS.indexOf(o.cc) < 0) continue;
+		x0 = Math.min(x0, o.x); x1 = Math.max(x1, o.x + o.w);
+		y0 = Math.min(y0, o.y); y1 = Math.max(y1, o.y + o.h);
+	}
+	if (x0 > x1) return;
+	setc(C_VALUE);
+	mgraphics.set_line_width(1.5);
+	mgraphics.rectangle_rounded(x0 - 3, y0 - 4, x1 - x0 + 6, y1 - y0 + 22, 6, 6);
+	mgraphics.stroke();
+	ctext(groupText.toUpperCase(), (x0 + x1) / 2, y1 + 13, 9, C_VALUE);
+}
+
 var scaleS = 1, offX = 0, offY = 0;
 
 function paint() {
@@ -298,6 +339,8 @@ function paint() {
 		ctext("" + (n + 1), STRIP_X + n * STRIP_W + STRIP_W / 2, 30, 22, C_TEXT);
 	}
 
+	if (groupText) drawGroup();
+
 	for (var g = 0; g < groupLabels.length; g++) {
 		ctext(groupLabels[g].text, groupLabels[g].cx, groupLabels[g].y, 9, C_DIM);
 	}
@@ -309,7 +352,7 @@ function paint() {
 		else if (o.type === "fader") drawFader(o);
 	}
 
-	ctext("MODE", 128, 222, 10, C_DIM);
+	ctext(captionText.toUpperCase(), 128, 222, 10, C_DIM);
 	// the mode line shrinks to fit the panel (e.g. EUCLIDEAN WINDOW - 3)
 	var mtxt = modeName.toUpperCase(), msize = 22;
 	mgraphics.set_font_size(msize);
