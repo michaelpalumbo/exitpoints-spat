@@ -1,0 +1,629 @@
+{
+    "global": {    },
+    "scenes": {
+        "ensemble1": {
+            "rich_headset": {
+                "level": 0,
+                "spread": 0.415531782111134,
+                "width": 1,
+                "modes": {
+                    "manual": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "loop": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "orbit": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "drift": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "hop": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    }
+                },
+                "assign": "orbit"
+            },
+            "rich_bowls": {
+                "level": 0,
+                "spread": 0.8043508136357386,
+                "width": 1,
+                "modes": {
+                    "manual": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "loop": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "orbit": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "drift": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "hop": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    }
+                },
+                "home": [ -2.592, -0.076 ],
+                "assign": "orbit"
+            },
+            "tia_gtr": {
+                "level": 0,
+                "spread": 0.1471816600179249,
+                "width": 1,
+                "modes": {
+                    "manual": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "loop": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "orbit": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "drift": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "hop": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    }
+                },
+                "assign": "orbit"
+            },
+            "tia_vox": {
+                "level": 0,
+                "spread": 0.01,
+                "width": 1,
+                "modes": {
+                    "manual": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "loop": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "drift": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "orbit": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "hop": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    }
+                }
+            },
+            "samiul_gtr": {
+                "level": 0,
+                "spread": 0.01,
+                "width": 1,
+                "modes": {
+                    "manual": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "loop": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "orbit": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "drift": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "hop": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    }
+                },
+                "assign": "orbit"
+            },
+            "bilal_gtr": {
+                "level": 0,
+                "spread": 0.01,
+                "width": 1,
+                "modes": {
+                    "manual": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "loop": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "drift": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "orbit": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "hop": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    }
+                }
+            },
+            "bilal_tape": {
+                "level": 0,
+                "spread": 0.01,
+                "width": 1,
+                "modes": {
+                    "manual": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "loop": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "drift": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "orbit": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "hop": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    }
+                }
+            },
+            "michael_piano": {
+                "level": 0,
+                "spread": 0.01,
+                "width": 1,
+                "modes": {
+                    "manual": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "loop": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "drift": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "orbit": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "hop": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    }
+                }
+            }
+        },
+        "ensemble2": {
+            "keisha_piano": {
+                "level": 0,
+                "spread": 0.01,
+                "width": 1,
+                "modes": {
+                    "manual": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "orbit": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "hop": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "pulse": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "swarm": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "sway": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    }
+                }
+            },
+            "martin_cl": {
+                "level": 0,
+                "spread": 0.01,
+                "width": 1,
+                "modes": {
+                    "manual": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "orbit": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "hop": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "pulse": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "swarm": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "sway": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    }
+                }
+            },
+            "martin_bcl": {
+                "level": 0,
+                "spread": 0.01,
+                "width": 1,
+                "modes": {
+                    "manual": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "orbit": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "hop": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "pulse": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "swarm": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "sway": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    }
+                }
+            },
+            "olive_keys": {
+                "level": 0,
+                "spread": 0.01,
+                "width": 1,
+                "modes": {
+                    "manual": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "orbit": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "hop": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "pulse": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "swarm": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "sway": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    }
+                }
+            },
+            "olive_vox": {
+                "level": 0,
+                "spread": 0.01,
+                "width": 1,
+                "modes": {
+                    "manual": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "orbit": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "hop": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "pulse": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "swarm": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "sway": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    }
+                }
+            },
+            "dhaivat_kit": {
+                "level": 0,
+                "spread": 0.01,
+                "width": 1,
+                "modes": {
+                    "manual": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "orbit": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "hop": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "pulse": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "swarm": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "sway": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    }
+                }
+            },
+            "dhaivat_tabla": {
+                "level": 0,
+                "spread": 0.01,
+                "width": 1,
+                "modes": {
+                    "manual": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "orbit": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "hop": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "pulse": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "swarm": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "sway": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    }
+                }
+            },
+            "yuval_vox": {
+                "level": 0,
+                "spread": 0.01,
+                "width": 1,
+                "modes": {
+                    "manual": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "orbit": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "hop": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "pulse": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "swarm": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    },
+                    "sway": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    }
+                }
+            }
+        },
+        "switchemups1": {
+            "in3": {
+                "level": 0,
+                "spread": 0.01,
+                "width": 1,
+                "modes": {
+                    "manual": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    }
+                }
+            },
+            "in15": {
+                "level": 0,
+                "spread": 0.01,
+                "width": 1,
+                "modes": {
+                    "manual": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    }
+                }
+            },
+            "dhaivat_kit": {
+                "level": 0,
+                "spread": 0.01,
+                "width": 1,
+                "modes": {
+                    "manual": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    }
+                }
+            },
+            "martin_bcl": {
+                "level": 0,
+                "spread": 0.01,
+                "width": 1,
+                "modes": {
+                    "sway": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    }
+                }
+            },
+            "bilal_gtr": {
+                "level": 0,
+                "spread": 0.01,
+                "width": 1,
+                "modes": {
+                    "sway": {
+                        "range": 1,
+                        "speed": 1,
+                        "accel": 1
+                    }
+                }
+            }
+        },
+        "switchemups2": {        }
+    }
+}

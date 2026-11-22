@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Quad panner: operator guide</title>
+<style>
+	body { background: #000; color: #ddd; font: 15px/1.45 -apple-system, Helvetica, Arial, sans-serif; margin: 0; padding: 18px 22px 40px; max-width: 860px; }
+	h1 { font-size: 22px; color: #fff; margin: 0 0 4px; }
+	h2 { font-size: 17px; color: #fff; margin: 26px 0 8px; border-bottom: 1px solid #333; padding-bottom: 4px; }
+	p { margin: 6px 0; }
+	.sub { color: #888; margin-bottom: 14px; }
+	table { border-collapse: collapse; width: 100%; margin: 6px 0; }
+	td, th { text-align: left; padding: 4px 8px; vertical-align: top; border-bottom: 1px solid #222; }
+	th { color: #888; font-weight: normal; font-size: 13px; }
+	td:first-child { white-space: nowrap; color: #fff; }
+	kbd { background: #222; border: 1px solid #444; border-radius: 3px; padding: 0 5px; color: #fff; font: 13px Menlo, monospace; }
+	ol { padding-left: 22px; margin: 6px 0; }
+	li { margin: 4px 0; }
+	.box { background: #141416; border-left: 3px solid #f25a33; padding: 8px 12px; margin: 10px 0; }
+	.box.blue { border-color: #73bfff; }
+	.k { color: #f25a33; }
+</style>
+</head>
+<body>
+
+<h1>Quad panner: operator guide</h1>
+<p class="sub">Created by Michael Palumbo, Nov 2026, for Exit Points #78</p>
+<p>You move the instruments around the four speakers and set their levels. FOH handles gain, EQ and the backup PA.</p>
+
+<h2>Words used in this guide</h2>
+<table>
+	<tr><td>Unit</td><td>One instrument (or one player's mics) that moves as a single sound. Up to 8 per set, one per nanoKONTROL2 strip.</td></tr>
+	<tr><td>Scene</td><td>One set's list of units, with their levels and settings: ensemble 1, ensemble 2, or switchemups 1-4.</td></tr>
+	<tr><td>Mode</td><td>A way of moving, picked with the number keys (drift, orbit, hop...).</td></tr>
+	<tr><td>Moving / frozen</td><td>A moving unit follows the mode. A frozen unit stays where it is. Switched with <b>M</b>.</td></tr>
+	<tr><td>Home</td><td>A unit's resting place in the room. <b>R</b> sends a unit there.</td></tr>
+	<tr><td>Pickup</td><td>A knob or fader does nothing until you move it past its current value, so nothing jumps.</td></tr>
+	<tr><td>IN number</td><td>The console channel(s) a unit uses, shown in its box (<kbd>IN:5/6</kbd>). Use it when talking to FOH.</td></tr>
+	<tr><td>Glide / cut</td><td>Whether changes happen smoothly or instantly. <kbd>TAB</kbd> switches.</td></tr>
+	<tr><td>Line-up</td><td>The units chosen for a switchemups set.</td></tr>
+</table>
+
+<div class="box blue">
+<p><b>Golden rules</b></p>
+<p>Keep the Max window in front, or the number keys won't work.</p>
+<p>Every unit starts <b>frozen</b>. Nothing moves until you press its <b>M</b> button.</p>
+<p>Frozen and moving are kept <b>separately for each mode</b>. A unit you set moving in orbit is still frozen in drift until you press its M there too. When you switch modes, each unit goes back to however you left it in that mode.</p>
+<p>Everything saves itself. You never need to save the patch.</p>
+</div>
+
+<h2>Before each set</h2>
+<ol>
+	<li>Load the scene with the scene buttons (ensemble 1, ensemble 2, or switchemups 1-4).</li>
+	<li>Check the 8 unit boxes at the bottom of the room view: each one shows its name and its input channels (for example <kbd>IN:5/6</kbd>).</li>
+	<li>Pick a mode with the number keys, then press <b>M</b> on the units you want moving.</li>
+</ol>
+
+<h2>nanoKONTROL2</h2>
+<p>One channel strip per unit: strip 1 is unit 1, and so on.</p>
+<table>
+	<tr><td>Fader</td><td>Unit level, -30 to +6 dB. Unity is about 5/6 of the way up. It can't mute.</td></tr>
+	<tr><td>M</td><td>Start / stop the unit moving. <b>Lit = moving.</b></td></tr>
+	<tr><td>R</td><td>Send the unit home and freeze it there.</td></tr>
+	<tr><td>S (tap)</td><td>In assign mode only: select the unit (it flashes slowly). Tap again to deselect.</td></tr>
+	<tr><td>S (hold 2 s)</td><td>Delete the unit's loop. It flashes fast while you hold. Let go early to keep the loop.</td></tr>
+	<tr><td>Knobs</td><td>What they change depends on the transport button you last pressed (below).</td></tr>
+</table>
+<table>
+	<tr><th>Button</th><th>Knobs change</th></tr>
+	<tr><td>&lt;&lt;</td><td><b>spread</b>: from a point to a wide, blurry sound (the halo in the room view grows)</td></tr>
+	<tr><td>&gt;&gt;</td><td><b>width</b>: how far apart a stereo pair or mic group sits. Single mics show "n/a (mono)".</td></tr>
+	<tr><td>STOP</td><td><b>range</b>: how far the unit travels from home. 0% stays home.</td></tr>
+	<tr><td>PLAY</td><td><b>speed</b>: how fast the unit moves</td></tr>
+	<tr><td>REC</td><td><b>accel</b>: at the top it moves instantly, lower and it moves with weight</td></tr>
+	<tr><td>CYCLE</td><td><b>global</b>: knob 1 overall speed, knob 2 glide time</td></tr>
+</table>
+<p>Range, speed and accel are remembered <b>separately for each mode</b>. Level, spread and width are the same in every mode.</p>
+<div class="box">
+<p><b>A knob or fader does nothing?</b> That's pickup. Move it until it passes the value shown on the screen (the line or dot), then it takes over. This stops levels from jumping.</p>
+</div>
+
+<h2>Keyboard</h2>
+<table>
+	<tr><td><kbd>1</kbd> manual</td><td>Units sit at their homes. Drag a unit in the room view to move its home.</td></tr>
+	<tr><td><kbd>2</kbd> drift</td><td>Slow wandering around the room.</td></tr>
+	<tr><td><kbd>3</kbd> orbit</td><td>Circling the middle of the room.</td></tr>
+	<tr><td><kbd>4</kbd> hop</td><td>Jumps between speakers at random.</td></tr>
+	<tr><td><kbd>5</kbd> pulse</td><td>Jumps between speakers together, on a beat.</td></tr>
+	<tr><td><kbd>6</kbd> swarm</td><td>Clustered together, travelling as a group.</td></tr>
+	<tr><td><kbd>7</kbd> sway</td><td>Front of the room to the back and back again.</td></tr>
+	<tr><td><kbd>8</kbd> perimeter</td><td>Spread around the walls, slowly circling.</td></tr>
+	<tr><td><kbd>9</kbd> loop</td><td>Drag a unit in the room view to draw a path. It loops when you let go.</td></tr>
+	<tr><td><kbd>0</kbd> assign</td><td>Each unit runs its own mode. Tap <b>S</b> on units, then press a number to give them that mode.</td></tr>
+	<tr><td><kbd>TAB</kbd></td><td>Glide (smooth changes) or cut (instant changes). Shown top right of the room view.</td></tr>
+</table>
+
+<h2>Switchemups: create or edit a set</h2>
+<p>Do this in the second intermission, with the sign-up sheet. Each of the 4 sets is its own scene.</p>
+<ol>
+	<li>Load <b>switchemups 1</b> with the scene buttons.</li>
+	<li>Click the blue <b>EDIT LINE-UP</b> button at the top of the room view. It turns orange and says DONE.</li>
+	<li>Click unit box <b>1</b> at the bottom. A list opens.</li>
+	<li>Click the instrument or input for that player. Each entry shows its channels (<kbd>IN:15</kbd>).
+		<br>Grey entries are already used by another unit (it says which one).
+		<br>Someone on a channel that isn't a named instrument? Pick the <b>IN #</b> entry for that channel.</li>
+	<li>Repeat for each player (up to 8). Pick <b>(empty)</b> to clear a slot.</li>
+	<li>Click <b>DONE</b>.</li>
+	<li>Load <b>switchemups 2</b> and repeat, then 3 and 4.</li>
+</ol>
+<p>Then for each set: load it, bring the levels up with the faders, and press <b>1</b> (manual) to drag each unit to roughly where that player stands. All of this is remembered.</p>
+<div class="box">
+<p><b>Start a set over from scratch:</b> press its <b>erase</b> button. It empties the line-up and forgets its levels and positions. Only switchemups sets can be erased.</p>
+<p><b>A problem with an input?</b> Tell FOH the IN number from the unit box.</p>
+</div>
+
+<h2>If something goes wrong</h2>
+<table>
+	<tr><td>Something too loud</td><td>Pull that unit's fader down (it picks up first, see above).</td></tr>
+	<tr><td>Too much movement</td><td>Press <b>M</b> to freeze units, or <b>R</b> to send them home.</td></tr>
+	<tr><td>Keys do nothing</td><td>Click the Max patch window so it's in front.</td></tr>
+	<tr><td>No sound at all from the quad</td><td>Tell FOH straight away. They bring up the backup PA.</td></tr>
+</table>
+
+</body>
+</html>

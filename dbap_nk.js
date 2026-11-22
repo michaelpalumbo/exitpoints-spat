@@ -5,7 +5,7 @@
 //   fader     unit level, -30 dB to +6 dB (unity about 5/6 up). The bottom is
 //             not off: there is no mute anywhere on the controller.
 //   M         toggle the unit frozen / moving in the current mode
-//             (LED lit = frozen; everything starts frozen)
+//             (LED lit = moving; everything starts frozen, so all M LEDs start dark)
 //   R         send the unit home and freeze it there
 //   S         tap:  select the unit for assigning a behaviour (assign mode, key 0);
 //                   the LED flashes slowly while selected. Tap again to deselect.
@@ -106,7 +106,7 @@ function active(n, on) {
 	const u = U[n - 1];
 	if (!u) return;
 	u.active = on ? 1 : 0;
-	led(M0 + n - 1, !u.active);
+	led(M0 + n - 1, u.active);
 	labels();
 }
 
@@ -153,7 +153,7 @@ function list(v, cc) {
 	if (cc >= M0 && cc < M0 + N) {
 		const n = cc - M0;
 		if (on && U[n].id) outlet(0, "toggle", n + 1);
-		else led(cc, U[n].id && !U[n].active, true);   // release: back to the unit's state
+		else led(cc, U[n].id && U[n].active, true);   // release: back to the unit's state
 		return;
 	}
 
@@ -314,6 +314,11 @@ function knobText(k) {
 	return "";
 }
 
+// width page, a unit with a single mic: nothing to widen
+function monoWidth(k) {
+	return PAGES[page].name === "width" && U[k].id && !U[k].hasWidth;
+}
+
 function knobName(k) {
 	const name = PAGES[page].name;
 	if (name === "global") return k === 0 ? "speed" : (k === 1 ? "glide" : "-");
@@ -377,7 +382,8 @@ function display() {
 			const txt = (u.level > 0.05 ? "+" : "") + u.level.toFixed(1) + "dB";
 			outlet(1, "fader", n, posOfDb(u.level), fPos[n], (n + 1) + "_" + u.id, txt);
 		}
-		outlet(1, "knob", n, knobNorm(n), kPos[n], knobName(n), knobText(n), -1, 0);
+		if (monoWidth(n)) outlet(1, "knob", n, -2, -1, "width", "n/a (mono)", -1, 0);   // -2: no ring
+		else outlet(1, "knob", n, knobNorm(n), kPos[n], knobName(n), knobText(n), -1, 0);
 	}
 	outlet(1, "mode", PAGES[page].name);
 }
@@ -386,7 +392,7 @@ function refresh() {
 	labels();
 	pageLeds(true);
 	for (let n = 0; n < N; n++) {
-		led(M0 + n, U[n].id && !U[n].active, true);
+		led(M0 + n, U[n].id && U[n].active, true);
 		led(R0 + n, 0, true);
 	}
 	flash();

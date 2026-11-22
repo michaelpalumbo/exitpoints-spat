@@ -4,7 +4,7 @@
 // Scales to the size of the v8ui box (designed at 904 x 340).
 //
 // Inlet (from nanoKontrolModes.js outlet 10, and the LED streams):
-//   knob <k> <value 0-1, -1 unused> <hardware position 0-1, -1 unseen> <name> <value text>
+//   knob <k> <value 0-1, -1 unused, -2 hidden (no ring, labels only)> <hardware position 0-1, -1 unseen> <name> <value text>
 //        [<remembered value 0-1, -1 none> <pushed 0/1>]
 //        Knobs: blue arc = the value, yellow tick = where the hardware knob is,
 //        red tick = a remembered value (region knobs 4 and 5): faint normally,
@@ -227,6 +227,12 @@ function drawKnob(o) {
 	var k = o.k;
 	var p = knobParam[k];
 	var active = p >= 0;
+	if (p <= -2) {
+		// hidden: no ring, just the labels
+		ctext(knobName[k], o.cx, o.cy - o.r - 10, 10, C_DIM);
+		ctext(knobText[k], o.cx, o.cy + 4, 10, C_DIM);
+		return;
+	}
 	mgraphics.set_line_width(4);
 	setc(C_TRACK);
 	mgraphics.arc(o.cx, o.cy, o.r, A0, A1);

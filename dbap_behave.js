@@ -26,6 +26,9 @@
 //                              range, speed, accel: per unit per behaviour
 //   speed <mult>, glidetime <seconds>      global
 //   clearloop <n>
+//   lineupedit <0|1>, setkey <slot> <id>   line-up editing, passed to dbap_control.js
+//   erasescene <name>          empty a switchemups line-up and forget its levels,
+//                              settings, homes and loops
 //   resetshow                  everything frozen; speed x1 and accel instant for
 //                              every unit and behaviour (levels, spread, width,
 //                              range, homes, loops and assignments are kept)
@@ -38,8 +41,11 @@
 // Other: dictionary dbap_state (from dbap_control.js),
 //        saveparams <file.json>, loadparams <file.json>
 //
-// Settings are kept per scene in dict "dbap_params". Put
-// [dict dbap_params @embed 1] in the patch and save the patch to keep them.
+// Settings are kept per scene and written to dbap_params.json in the patch's
+// folder a couple of seconds after any change, so nobody has to save the patch.
+// On load they're read from that file (or, if it doesn't exist yet, from an
+// embedded [dict dbap_params], if there is one). The patch must have been saved
+// once so it has a folder.
 //
 // Outlets:
 //   0  to dbap_control.js
@@ -89,7 +95,10 @@ const loopsDict = new Dict("dbap_loops");
 const paramsDict = new Dict("dbap_params");
 
 let params = null;          // { global: {speed, glide}, scenes: { name: { id: {...} } } }
-let paramsDirty = false;
+let paramsDirty = false;    // the in-memory dict needs updating
+let fileDirty = false;      // dbap_params.json needs rewriting
+const PATCHER = this.patcher;
+const PARAMS_FILE = "dbap_params.json";
 // Don't read or write the stored settings until the patch has finished loading
 // (loadbang), or 1.5 s after this script was loaded (an autowatch reload).
 let ready = false;
@@ -120,6 +129,23 @@ function key(a) {
 		return;
 	}
 	setMode(MODE_NAMES[m]);
+}
+
+// line-up editing (switchemups): passed through to dbap_control.js
+function lineupedit(on) { outlet(0, "lineupedit", on ? 1 : 0); }
+function setkey(slot, id) { outlet(0, "setkey", slot, id); }
+
+function erasescene(name) {
+	name = String(name);
+	if (name.indexOf("switchemups") !== 0) {
+		post("dbap_behave: only switchemups scenes can be erased\n");
+		return;
+	}
+	ensureParams();
+	delete params.scenes[name];
+	paramsDirty = true;
+	if (state && state.scene === name) sig = "";   // rebuild from fresh defaults
+	outlet(0, "clearlineup", name);
 }
 
 function speed(v) {
@@ -327,6 +353,10 @@ function dictionary(name) {
 
 function ensureParams() {
 	if (params) return;
+	const path = patchFile(PARAMS_FILE);
+	if (path && fileExists(path)) {
+		try { paramsDict.import_json(path); } catch (e) { post("dbap_behave: couldn't read " + path + "\n"); }
+	}
 	let o = {};
 	try { o = JSON.parse(paramsDict.stringify()) || {}; } catch (e) { o = {}; }
 	params = { global: o.global || {}, scenes: o.scenes || {} };
@@ -338,6 +368,14 @@ function ensureParams() {
 function writeParams() {
 	paramsDict.parse(JSON.stringify(params));
 	paramsDirty = false;
+	fileDirty = true;
+}
+
+function writeParamsFile() {
+	fileDirty = false;
+	const path = patchFile(PARAMS_FILE);
+	if (!path) return;
+	try { paramsDict.export_json(path); } catch (e) { post("dbap_behave: couldn't write " + path + "\n"); }
 }
 
 function saveparams(file) {
@@ -350,10 +388,34 @@ function saveparams(file) {
 function loadparams(file) {
 	paramsDict.import_json(file);
 	params = null;
-	ensureParams();
+	// skip the automatic file this once, so the backup is what gets loaded
+	let o = {};
+	try { o = JSON.parse(paramsDict.stringify()) || {}; } catch (e) { o = {}; }
+	params = { global: o.global || {}, scenes: o.scenes || {} };
+	paramsDirty = true;
 	sig = "";
 	if (state) dictionary("dbap_state");
 	post("dbap_behave: settings loaded from " + file + "\n");
+}
+
+// a file in the patch's folder, or "" if the patch has never been saved
+function patchFile(name) {
+	let fp = "";
+	try { fp = PATCHER && PATCHER.filepath ? String(PATCHER.filepath) : ""; } catch (e) { fp = ""; }
+	const i = fp.lastIndexOf("/");
+	if (i < 0) return "";
+	return fp.slice(0, i + 1) + name;
+}
+
+function fileExists(path) {
+	try {
+		const f = new File(path, "read");
+		const ok = f.isopen;
+		f.close();
+		return ok;
+	} catch (e) {
+		return false;
+	}
 }
 
 // per unit, per behaviour: range, speed, accel
@@ -389,6 +451,7 @@ function buildUnits() {
 	units = [];
 	keys.forEach((id, i) => {
 		const n = i + 1;
+		if (id === "-" || id === "") return;   // empty slot in a line-up
 		let kind = "source";
 		let members = [id];
 		if (!state.sources[id]) {
@@ -411,8 +474,9 @@ function buildUnits() {
 		sp[id] = Object.assign({}, UNIT_DEFAULTS, { modes: {} }, kept);
 		const ph = toArr(sp[id].home);
 		const homeXY = ph.length === 2 ? ph.slice() : [avg(ms.map(s => s.home[0])), avg(ms.map(s => s.home[1]))];
+		const label = kind === "source" ? (state.sources[id].label || id) : id;
 		const u = {
-			n, id, kind, members,
+			n, id, kind, members, label,
 			acoustic: ms.some(s => s.acoustic),
 			hasWidth: ms.some(s => toArr(s.points).length > 1),
 			baseWidth: {},
@@ -624,6 +688,7 @@ function tick() {
 	tickCount++;
 	if (tickCount % 3 === 0) publish();
 	if (tickCount % 15 === 0 && paramsDirty) writeParams();
+	if (tickCount % 60 === 0 && fileDirty) writeParamsFile();   // about every 2 s
 }
 
 function accelOf(a) {
@@ -771,7 +836,7 @@ function sendUnits() {
 			continue;
 		}
 		const m = mp(u);
-		outlet(1, "unit", n, u.id, u.hasWidth ? 1 : 0, isActive(u) ? 1 : 0,
+		outlet(1, "unit", n, String(u.label).replace(/ /g, "_"), u.hasWidth ? 1 : 0, isActive(u) ? 1 : 0,
 			u.p.level, u.p.spread, u.p.width, m.speed, m.accel, m.range, u.p.loop ? 1 : 0, behOf(u));
 	}
 	outlet(1, "behmode", mode);

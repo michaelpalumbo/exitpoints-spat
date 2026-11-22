@@ -13,6 +13,306 @@
         "boxes": [
             {
                 "box": {
+                    "bgoncolor": [ 0.6470588235294118, 0.18823529411764706, 0.18823529411764706, 1.0 ],
+                    "id": "obj-180",
+                    "maxclass": "textbutton",
+                    "numinlets": 1,
+                    "numoutlets": 3,
+                    "outlettype": [ "", "", "int" ],
+                    "parameter_enable": 0,
+                    "patching_rect": [ 923.5999988615513, 463.900003105402, 152.80000227689743, 49.199993789196014 ],
+                    "presentation": 1,
+                    "presentation_rect": [ 1024.000015258789, 12.400006830692291, 152.80000227689743, 49.199993789196014 ],
+                    "text": "HOW-TO GUIDE",
+                    "texton": "Opening",
+                    "usebgoncolor": 1
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-179",
+                    "maxclass": "newobj",
+                    "numinlets": 1,
+                    "numoutlets": 0,
+                    "patcher": {
+                        "fileversion": 1,
+                        "appversion": {
+                            "major": 9,
+                            "minor": 1,
+                            "revision": 2,
+                            "architecture": "x64",
+                            "modernui": 1
+                        },
+                        "classnamespace": "box",
+                        "rect": [ 410.0, 713.0, 798.0, 652.0 ],
+                        "openinpresentation": 1,
+                        "toolbarvisible": 0,
+                        "enablehscroll": 0,
+                        "enablevscroll": 0,
+                        "boxes": [
+                            {
+                                "box": {
+                                    "id": "obj-3",
+                                    "maxclass": "newobj",
+                                    "numinlets": 1,
+                                    "numoutlets": 2,
+                                    "outlettype": [ "", "" ],
+                                    "patching_rect": [ 650.0, 496.0, 67.0, 22.0 ],
+                                    "save": [ "#N", "thispatcher", ";", "#Q", "end", ";" ],
+                                    "text": "thispatcher"
+                                }
+                            },
+                            {
+                                "box": {
+                                    "comment": "",
+                                    "id": "obj-2",
+                                    "index": 1,
+                                    "maxclass": "inlet",
+                                    "numinlets": 0,
+                                    "numoutlets": 1,
+                                    "outlettype": [ "" ],
+                                    "patching_rect": [ 650.0, 383.0, 30.0, 30.0 ]
+                                }
+                            },
+                            {
+                                "box": {
+                                    "id": "obj-1",
+                                    "maxclass": "newobj",
+                                    "numinlets": 1,
+                                    "numoutlets": 1,
+                                    "outlettype": [ "front" ],
+                                    "patching_rect": [ 650.0, 440.0, 39.0, 22.0 ],
+                                    "text": "t front"
+                                }
+                            },
+                            {
+                                "box": {
+                                    "id": "obj-178",
+                                    "maxclass": "newobj",
+                                    "numinlets": 1,
+                                    "numoutlets": 1,
+                                    "outlettype": [ "" ],
+                                    "patching_rect": [ 50.0, 100.0, 87.0, 22.0 ],
+                                    "text": "loadmess path"
+                                }
+                            },
+                            {
+                                "box": {
+                                    "id": "obj-176",
+                                    "maxclass": "newobj",
+                                    "numinlets": 1,
+                                    "numoutlets": 1,
+                                    "outlettype": [ "" ],
+                                    "patching_rect": [ 98.0, 160.8000009059906, 203.0, 22.0 ],
+                                    "text": "sprintf readfile %spanner_guide.html"
+                                }
+                            },
+                            {
+                                "box": {
+                                    "id": "obj-173",
+                                    "maxclass": "newobj",
+                                    "numinlets": 1,
+                                    "numoutlets": 2,
+                                    "outlettype": [ "", "" ],
+                                    "patching_rect": [ 50.0, 130.4000004529953, 67.0, 22.0 ],
+                                    "save": [ "#N", "thispatcher", ";", "#Q", "end", ";" ],
+                                    "text": "thispatcher"
+                                }
+                            },
+                            {
+                                "box": {
+                                    "disablefind": 0,
+                                    "id": "obj-172",
+                                    "maxclass": "jweb",
+                                    "numinlets": 1,
+                                    "numoutlets": 1,
+                                    "outlettype": [ "" ],
+                                    "patching_rect": [ 98.0, 198.0, 389.0, 384.0 ],
+                                    "presentation": 1,
+                                    "presentation_rect": [ -16.0, -5.0, 798.0, 649.0 ],
+                                    "rendermode": 0,
+                                    "url": "file://panner_guide.html"
+                                }
+                            }
+                        ],
+                        "lines": [
+                            {
+                                "patchline": {
+                                    "destination": [ "obj-3", 0 ],
+                                    "source": [ "obj-1", 0 ]
+                                }
+                            },
+                            {
+                                "patchline": {
+                                    "destination": [ "obj-176", 0 ],
+                                    "source": [ "obj-173", 1 ]
+                                }
+                            },
+                            {
+                                "patchline": {
+                                    "destination": [ "obj-172", 0 ],
+                                    "source": [ "obj-176", 0 ]
+                                }
+                            },
+                            {
+                                "patchline": {
+                                    "destination": [ "obj-173", 0 ],
+                                    "source": [ "obj-178", 0 ]
+                                }
+                            },
+                            {
+                                "patchline": {
+                                    "destination": [ "obj-1", 0 ],
+                                    "source": [ "obj-2", 0 ]
+                                }
+                            }
+                        ]
+                    },
+                    "patching_rect": [ 924.25, 536.8000079989433, 93.0, 22.0 ],
+                    "text": "p how_to_guide"
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-171",
+                    "maxclass": "textbutton",
+                    "numinlets": 1,
+                    "numoutlets": 3,
+                    "outlettype": [ "", "", "int" ],
+                    "parameter_enable": 0,
+                    "patching_rect": [ 257.0, 664.6000088453293, 100.0, 20.0 ],
+                    "presentation": 1,
+                    "presentation_rect": [ 789.6000117659569, 687.200010240078, 92.80000138282776, 36.80000054836273 ],
+                    "text": "Reset Show",
+                    "texton": "Reset Show"
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-170",
+                    "maxclass": "message",
+                    "numinlets": 2,
+                    "numoutlets": 1,
+                    "outlettype": [ "" ],
+                    "patching_rect": [ 257.0, 693.6000103354454, 63.0, 22.0 ],
+                    "text": "resetshow"
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-168",
+                    "maxclass": "newobj",
+                    "numinlets": 2,
+                    "numoutlets": 2,
+                    "outlettype": [ "", "" ],
+                    "patching_rect": [ 956.0, 204.5, 47.0, 22.0 ],
+                    "text": "zl.nth 2"
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-167",
+                    "maxclass": "newobj",
+                    "numinlets": 2,
+                    "numoutlets": 1,
+                    "outlettype": [ "int" ],
+                    "patching_rect": [ 956.0, 152.0, 29.5, 22.0 ],
+                    "text": "+ 1"
+                }
+            },
+            {
+                "box": {
+                    "coll_data": {
+                        "count": 6,
+                        "data": [
+                            {
+                                "key": 1,
+                                "value": [ "ensemble1" ]
+                            },
+                            {
+                                "key": 2,
+                                "value": [ "ensemble2" ]
+                            },
+                            {
+                                "key": 3,
+                                "value": [ "switchemups1" ]
+                            },
+                            {
+                                "key": 4,
+                                "value": [ "switchemups2" ]
+                            },
+                            {
+                                "key": 5,
+                                "value": [ "switchemups3" ]
+                            },
+                            {
+                                "key": 6,
+                                "value": [ "switchemups4" ]
+                            }
+                        ]
+                    },
+                    "id": "obj-162",
+                    "maxclass": "newobj",
+                    "numinlets": 1,
+                    "numoutlets": 4,
+                    "outlettype": [ "", "", "", "" ],
+                    "patching_rect": [ 956.0, 179.2000026702881, 89.0, 22.0 ],
+                    "saved_object_attributes": {
+                        "embed": 1,
+                        "precision": 6
+                    },
+                    "text": "coll @embed 1"
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-161",
+                    "maxclass": "newobj",
+                    "numinlets": 1,
+                    "numoutlets": 1,
+                    "outlettype": [ "" ],
+                    "patching_rect": [ 956.0, 232.80000346899033, 88.0, 22.0 ],
+                    "text": "prepend scene"
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-160",
+                    "maxclass": "comment",
+                    "numinlets": 1,
+                    "numoutlets": 0,
+                    "patching_rect": [ 976.8000003099442, 119.99999856948853, 150.0, 20.0 ],
+                    "presentation": 1,
+                    "presentation_rect": [ 811.200012087822, 160.0000023841858, 150.0, 20.0 ],
+                    "text": "Switchemups 4"
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-159",
+                    "maxclass": "comment",
+                    "numinlets": 1,
+                    "numoutlets": 0,
+                    "patching_rect": [ 976.8000003099442, 96.99999928474426, 150.0, 20.0 ],
+                    "presentation": 1,
+                    "presentation_rect": [ 811.200012087822, 136.80000203847885, 150.0, 20.0 ],
+                    "text": "Switchemups 3"
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-158",
+                    "maxclass": "comment",
+                    "numinlets": 1,
+                    "numoutlets": 0,
+                    "patching_rect": [ 976.8000003099442, 74.0, 150.0, 20.0 ],
+                    "presentation": 1,
+                    "presentation_rect": [ 811.200012087822, 114.40000170469284, 150.0, 20.0 ],
+                    "text": "Switchemups 2"
+                }
+            },
+            {
+                "box": {
                     "id": "obj-157",
                     "maxclass": "newobj",
                     "numinlets": 1,
@@ -26,15 +326,12 @@
                 "box": {
                     "fontsize": 12.0,
                     "id": "obj-155",
-                    "linecount": 3,
                     "maxclass": "comment",
                     "numinlets": 1,
                     "numoutlets": 0,
-                    "patching_rect": [ 696.5, 524.8000078201294, 165.0, 47.0 ],
+                    "patching_rect": [ 696.5, 524.8000078201294, 165.0, 20.0 ],
                     "presentation": 1,
-                    "presentation_linecount": 3,
-                    "presentation_rect": [ 1039.2000154852867, 189.60000282526016, 208.00000309944153, 47.0 ],
-                    "text": "recording to EP_78_Quad_Recording_11_21_2026_23_51_39.wav"
+                    "presentation_rect": [ 1037.6000154614449, 252.80000376701355, 208.00000309944153, 20.0 ]
                 }
             },
             {
@@ -57,7 +354,7 @@
                     "numoutlets": 0,
                     "patching_rect": [ 472.0000070333481, 549.6000081896782, 228.0, 29.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 1039.2000154852867, 153.60000199079514, 151.20000225305557, 29.0 ]
+                    "presentation_rect": [ 1037.6000154614449, 216.80000323057175, 151.20000225305557, 29.0 ]
                 }
             },
             {
@@ -94,7 +391,7 @@
                     "parameter_enable": 0,
                     "patching_rect": [ 605.0, 364.0, 152.80000227689743, 49.199993789196014 ],
                     "presentation": 1,
-                    "presentation_rect": [ 1037.6000154614449, 96.8000014424324, 152.80000227689743, 49.199993789196014 ],
+                    "presentation_rect": [ 1036.000015437603, 160.0000023841858, 152.80000227689743, 49.199993789196014 ],
                     "text": "RECORDING STOPPED",
                     "texton": "RECORDING",
                     "usebgoncolor": 1
@@ -705,9 +1002,9 @@
                     "mode": 0,
                     "numinlets": 1,
                     "numoutlets": 0,
-                    "patching_rect": [ 994.4000148177147, 529.0, 128.0, 128.0 ],
+                    "patching_rect": [ 627.2000093460083, 416.800006210804, 51.20000076293945, 55.2000008225441 ],
                     "presentation": 1,
-                    "presentation_rect": [ 1024.000015258789, 48.800000727176666, 235.2000035047531, 273.6000040769577 ],
+                    "presentation_rect": [ 1024.000015258789, 147.20000219345093, 235.2000035047531, 175.20000261068344 ],
                     "proportion": 0.5
                 }
             },
@@ -722,7 +1019,7 @@
                     "mode": 0,
                     "numinlets": 1,
                     "numoutlets": 0,
-                    "patching_rect": [ 1088.8000162243843, 292.00000435113907, 128.0, 128.0 ],
+                    "patching_rect": [ 1490.4000222086906, 232.80000346899033, 128.0, 128.0 ],
                     "presentation": 1,
                     "presentation_rect": [ 1024.000015258789, 380.00000566244125, 235.2000035047531, 326.400004863739 ],
                     "proportion": 0.5
@@ -736,7 +1033,7 @@
                     "maxclass": "comment",
                     "numinlets": 1,
                     "numoutlets": 0,
-                    "patching_rect": [ 659.0, 609.0, 240.0, 87.0 ],
+                    "patching_rect": [ 1490.4000222086906, 371.20000553131104, 240.0, 87.0 ],
                     "presentation": 1,
                     "presentation_linecount": 3,
                     "presentation_rect": [ 1028.0000153183937, 384.5, 240.0, 87.0 ],
@@ -751,7 +1048,7 @@
                     "numoutlets": 0,
                     "patching_rect": [ 784.8000116944313, 14.400000214576721, 150.0, 20.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 793.2000060975552, 23.20000034570694, 150.0, 20.0 ],
+                    "presentation_rect": [ 789.6000117659569, 16.800000250339508, 150.0, 20.0 ],
                     "text": "Scene Selection"
                 }
             },
@@ -762,9 +1059,9 @@
                     "maxclass": "comment",
                     "numinlets": 1,
                     "numoutlets": 0,
-                    "patching_rect": [ 689.0, 639.0, 240.0, 33.0 ],
+                    "patching_rect": [ 418.19999957084656, 542.5000081658363, 57.600000858306885, 33.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 839.600006788969, 553.6000082492828, 44.00000065565109, 33.0 ],
+                    "presentation_rect": [ 839.2000125050545, 636.0000094771385, 44.00000065565109, 33.0 ],
                     "text": "BR"
                 }
             },
@@ -775,9 +1072,9 @@
                     "maxclass": "comment",
                     "numinlets": 1,
                     "numoutlets": 0,
-                    "patching_rect": [ 674.0, 624.0, 240.0, 33.0 ],
+                    "patching_rect": [ 385.0, 542.5000081658363, 57.600000858306885, 33.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 790.0000060498714, 553.6000082492828, 44.00000065565109, 33.0 ],
+                    "presentation_rect": [ 789.6000117659569, 636.0000094771385, 44.00000065565109, 33.0 ],
                     "text": "BL"
                 }
             },
@@ -788,9 +1085,9 @@
                     "maxclass": "comment",
                     "numinlets": 1,
                     "numoutlets": 0,
-                    "patching_rect": [ 674.0, 624.0, 240.0, 33.0 ],
+                    "patching_rect": [ 342.69999957084656, 536.8000079989433, 57.600000858306885, 33.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 840.40000680089, 384.8000057339668, 44.00000065565109, 33.0 ],
+                    "presentation_rect": [ 840.0000125169754, 467.2000069618225, 44.00000065565109, 33.0 ],
                     "text": "FR"
                 }
             },
@@ -801,9 +1098,9 @@
                     "maxclass": "comment",
                     "numinlets": 1,
                     "numoutlets": 0,
-                    "patching_rect": [ 659.0, 609.0, 240.0, 33.0 ],
+                    "patching_rect": [ 308.5999991297722, 536.8000079989433, 57.600000858306885, 33.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 790.0000060498714, 384.8000057339668, 44.00000065565109, 33.0 ],
+                    "presentation_rect": [ 789.6000117659569, 467.2000069618225, 44.00000065565109, 33.0 ],
                     "text": "FL"
                 }
             },
@@ -817,7 +1114,7 @@
                     "numoutlets": 7,
                     "outlettype": [ "signal", "signal", "signal", "signal", "", "float", "list" ],
                     "parameter_enable": 1,
-                    "patching_rect": [ 1213.0, 1318.0, 208.0, 162.0 ],
+                    "patching_rect": [ 1490.4000222086906, 593.6000088453293, 208.0, 162.0 ],
                     "presentation": 1,
                     "presentation_rect": [ 1028.8000153303146, 533.3000022172928, 196.0, 163.0 ],
                     "saved_attribute_attributes": {
@@ -842,7 +1139,7 @@
                     "numinlets": 2,
                     "numoutlets": 1,
                     "outlettype": [ "" ],
-                    "patching_rect": [ 1213.0, 1226.0, 29.5, 22.0 ],
+                    "patching_rect": [ 1490.4000222086906, 502.4000074863434, 29.5, 22.0 ],
                     "text": "0"
                 }
             },
@@ -854,7 +1151,7 @@
                     "numoutlets": 3,
                     "outlettype": [ "", "", "int" ],
                     "parameter_enable": 0,
-                    "patching_rect": [ 1213.0, 1195.0, 100.0, 20.0 ],
+                    "patching_rect": [ 1490.4000222086906, 470.4000070095062, 100.0, 20.0 ],
                     "presentation": 1,
                     "presentation_rect": [ 1028.0000153183937, 477.30000138282776, 100.0, 20.0 ],
                     "text": "Stop Playback",
@@ -869,7 +1166,7 @@
                     "numinlets": 1,
                     "numoutlets": 2,
                     "outlettype": [ "", "int" ],
-                    "patching_rect": [ 1258.0, 1226.0, 196.0, 19.0 ],
+                    "patching_rect": [ 1535.2000228762627, 501.60000747442245, 196.0, 19.0 ],
                     "presentation": 1,
                     "presentation_rect": [ 1028.0000153183937, 506.1000018119812, 196.0, 19.0 ]
                 }
@@ -880,7 +1177,7 @@
                     "maxclass": "newobj",
                     "numinlets": 4,
                     "numoutlets": 0,
-                    "patching_rect": [ 1213.0, 1495.0, 113.5, 22.0 ],
+                    "patching_rect": [ 1490.4000222086906, 778.4000115990639, 113.5, 22.0 ],
                     "text": "dac~ 1 2 3 4"
                 }
             },
@@ -891,7 +1188,7 @@
                     "numinlets": 2,
                     "numoutlets": 5,
                     "outlettype": [ "signal", "signal", "signal", "signal", "bang" ],
-                    "patching_rect": [ 1213.0, 1272.0, 271.0, 22.0 ],
+                    "patching_rect": [ 1490.4000222086906, 548.0000081658363, 271.0, 22.0 ],
                     "text": "sfplay~ 4 @audiofile Belonging_Quad_Track.wav"
                 }
             },
@@ -902,10 +1199,10 @@
                     "maxclass": "comment",
                     "numinlets": 1,
                     "numoutlets": 0,
-                    "patching_rect": [ 1403.0, 620.0, 150.0, 47.0 ],
+                    "patching_rect": [ 566.4000084400177, 291.20000433921814, 150.40000224113464, 47.0 ],
                     "presentation": 1,
                     "presentation_linecount": 2,
-                    "presentation_rect": [ 897.2000076472759, 384.8000057339668, 111.0, 47.0 ],
+                    "presentation_rect": [ 896.8000133633614, 467.2000069618225, 111.0, 47.0 ],
                     "text": "Headphone Monitor (Out CH 5)\n"
                 }
             },
@@ -1001,7 +1298,7 @@
                     "numinlets": 1,
                     "numoutlets": 1,
                     "outlettype": [ "bang" ],
-                    "patching_rect": [ 1258.0, 703.0, 58.0, 22.0 ],
+                    "patching_rect": [ 1308.0000194907188, 219.20000326633453, 58.0, 22.0 ],
                     "text": "loadbang"
                 }
             },
@@ -1011,7 +1308,7 @@
                     "maxclass": "dict.view",
                     "numinlets": 1,
                     "numoutlets": 0,
-                    "patching_rect": [ 1258.0, 775.0, 100.0, 100.0 ]
+                    "patching_rect": [ 1308.0000194907188, 291.20000433921814, 100.0, 100.0 ]
                 }
             },
             {
@@ -1039,6 +1336,16 @@
                                             "range": 1,
                                             "speed": 1,
                                             "accel": 1
+                                        },
+                                        "drift": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "hop": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
                                         }
                                     },
                                     "assign": "orbit"
@@ -1059,6 +1366,16 @@
                                             "accel": 1
                                         },
                                         "orbit": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "drift": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "hop": {
                                             "range": 1,
                                             "speed": 1,
                                             "accel": 1
@@ -1086,6 +1403,16 @@
                                             "range": 1,
                                             "speed": 1,
                                             "accel": 1
+                                        },
+                                        "drift": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "hop": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
                                         }
                                     },
                                     "assign": "orbit"
@@ -1101,6 +1428,21 @@
                                             "accel": 1
                                         },
                                         "loop": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "drift": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "orbit": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "hop": {
                                             "range": 1,
                                             "speed": 1,
                                             "accel": 1
@@ -1126,6 +1468,16 @@
                                             "range": 1,
                                             "speed": 1,
                                             "accel": 1
+                                        },
+                                        "drift": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "hop": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
                                         }
                                     },
                                     "assign": "orbit"
@@ -1141,6 +1493,21 @@
                                             "accel": 1
                                         },
                                         "loop": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "drift": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "orbit": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "hop": {
                                             "range": 1,
                                             "speed": 1,
                                             "accel": 1
@@ -1161,6 +1528,21 @@
                                             "range": 1,
                                             "speed": 1,
                                             "accel": 1
+                                        },
+                                        "drift": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "orbit": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "hop": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
                                         }
                                     }
                                 },
@@ -1178,10 +1560,386 @@
                                             "range": 1,
                                             "speed": 1,
                                             "accel": 1
+                                        },
+                                        "drift": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "orbit": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "hop": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
                                         }
                                     }
                                 }
-                            }
+                            },
+                            "ensemble2": {
+                                "keisha_piano": {
+                                    "level": 0,
+                                    "spread": 0.01,
+                                    "width": 1,
+                                    "modes": {
+                                        "manual": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "orbit": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "hop": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "pulse": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "swarm": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "sway": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        }
+                                    }
+                                },
+                                "martin_cl": {
+                                    "level": 0,
+                                    "spread": 0.01,
+                                    "width": 1,
+                                    "modes": {
+                                        "manual": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "orbit": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "hop": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "pulse": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "swarm": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "sway": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        }
+                                    }
+                                },
+                                "martin_bcl": {
+                                    "level": 0,
+                                    "spread": 0.01,
+                                    "width": 1,
+                                    "modes": {
+                                        "manual": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "orbit": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "hop": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "pulse": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "swarm": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "sway": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        }
+                                    }
+                                },
+                                "olive_keys": {
+                                    "level": 0,
+                                    "spread": 0.01,
+                                    "width": 1,
+                                    "modes": {
+                                        "manual": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "orbit": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "hop": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "pulse": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "swarm": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "sway": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        }
+                                    }
+                                },
+                                "olive_vox": {
+                                    "level": 0,
+                                    "spread": 0.01,
+                                    "width": 1,
+                                    "modes": {
+                                        "manual": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "orbit": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "hop": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "pulse": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "swarm": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "sway": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        }
+                                    }
+                                },
+                                "dhaivat_kit": {
+                                    "level": 0,
+                                    "spread": 0.01,
+                                    "width": 1,
+                                    "modes": {
+                                        "manual": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "orbit": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "hop": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "pulse": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "swarm": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "sway": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        }
+                                    }
+                                },
+                                "dhaivat_tabla": {
+                                    "level": 0,
+                                    "spread": 0.01,
+                                    "width": 1,
+                                    "modes": {
+                                        "manual": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "orbit": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "hop": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "pulse": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "swarm": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "sway": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        }
+                                    }
+                                },
+                                "yuval_vox": {
+                                    "level": 0,
+                                    "spread": 0.01,
+                                    "width": 1,
+                                    "modes": {
+                                        "manual": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "orbit": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "hop": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "pulse": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "swarm": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        },
+                                        "sway": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        }
+                                    }
+                                }
+                            },
+                            "switchemups1": {
+                                "in3": {
+                                    "level": 0,
+                                    "spread": 0.01,
+                                    "width": 1,
+                                    "modes": {
+                                        "manual": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        }
+                                    }
+                                },
+                                "in15": {
+                                    "level": 0,
+                                    "spread": 0.01,
+                                    "width": 1,
+                                    "modes": {
+                                        "manual": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        }
+                                    }
+                                },
+                                "dhaivat_kit": {
+                                    "level": 0,
+                                    "spread": 0.01,
+                                    "width": 1,
+                                    "modes": {
+                                        "manual": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        }
+                                    }
+                                },
+                                "martin_bcl": {
+                                    "level": 0,
+                                    "spread": 0.01,
+                                    "width": 1,
+                                    "modes": {
+                                        "sway": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        }
+                                    }
+                                },
+                                "bilal_gtr": {
+                                    "level": 0,
+                                    "spread": 0.01,
+                                    "width": 1,
+                                    "modes": {
+                                        "sway": {
+                                            "range": 1,
+                                            "speed": 1,
+                                            "accel": 1
+                                        }
+                                    }
+                                }
+                            },
+                            "switchemups2": {                            }
                         }
                     },
                     "id": "obj-49",
@@ -1189,7 +1947,7 @@
                     "numinlets": 2,
                     "numoutlets": 5,
                     "outlettype": [ "dictionary", "", "", "", "" ],
-                    "patching_rect": [ 1258.0, 744.0, 166.0, 22.0 ],
+                    "patching_rect": [ 1308.0000194907188, 260.0000038743019, 166.0, 22.0 ],
                     "saved_object_attributes": {
                         "embed": 1,
                         "legacy": 0,
@@ -1220,7 +1978,7 @@
                     "parameter_enable": 0,
                     "patching_rect": [ 23.0, 190.0, 24.0, 24.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 790.0000060498714, 343.2000051140785, 24.0, 24.0 ]
+                    "presentation_rect": [ 789.6000117659569, 425.6000063419342, 24.0, 24.0 ]
                 }
             },
             {
@@ -1243,7 +2001,7 @@
                     "numoutlets": 0,
                     "patching_rect": [ 50.0, 192.0, 49.0, 47.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 817.200006455183, 345.6000051498413, 131.20000195503235, 20.0 ],
+                    "presentation_rect": [ 816.8000121712685, 428.000006377697, 131.20000195503235, 20.0 ],
                     "text": "MUTE EVERYTHING"
                 }
             },
@@ -1319,21 +2077,11 @@
                     "maxclass": "comment",
                     "numinlets": 1,
                     "numoutlets": 0,
-                    "patching_rect": [ 1214.5, 398.0, 150.0, 181.0 ],
+                    "patching_rect": [ 1489.6000221967697, 32.0, 150.0, 181.0 ],
                     "presentation": 1,
-                    "presentation_linecount": 13,
-                    "presentation_rect": [ 787.6000060141087, 138.4000020623207, 150.0, 181.0 ],
+                    "presentation_linecount": 9,
+                    "presentation_rect": [ 786.4000117182732, 195.40000480413437, 215.2000032067299, 127.0 ],
                     "text": "todo: have a checklist for each set: \n\n1. ensure DSP is on\n2. ensure the correct ensemble scene is selected\n3. start recording\n4. reset show parameters (button)\n5. ... \n6. END of set: stop the recording"
-                }
-            },
-            {
-                "box": {
-                    "id": "obj-12",
-                    "maxclass": "newobj",
-                    "numinlets": 1,
-                    "numoutlets": 0,
-                    "patching_rect": [ 918.0, 440.0, 91.0, 22.0 ],
-                    "text": "print @popup 1"
                 }
             },
             {
@@ -1364,9 +2112,9 @@
                     "numinlets": 1,
                     "numoutlets": 1,
                     "outlettype": [ "float" ],
-                    "patching_rect": [ 530.8, 253.0, 32.0, 87.0 ],
+                    "patching_rect": [ 531.2000079154968, 252.80000376701355, 32.00000047683716, 87.20000129938126 ],
                     "presentation": 1,
-                    "presentation_rect": [ 897.2000076472759, 436.0000064969063, 32.0, 70.0 ]
+                    "presentation_rect": [ 896.8000133633614, 518.400007724762, 32.0, 70.0 ]
                 }
             },
             {
@@ -1378,7 +2126,7 @@
                     "outlettype": [ "float" ],
                     "patching_rect": [ 431.0, 445.0, 32.0, 87.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 843.6000068485737, 489.6000072956085, 30.4000004529953, 64.00000095367432 ]
+                    "presentation_rect": [ 843.2000125646591, 572.0000085234642, 30.4000004529953, 64.00000095367432 ]
                 }
             },
             {
@@ -1390,7 +2138,7 @@
                     "outlettype": [ "float" ],
                     "patching_rect": [ 392.0, 445.0, 32.0, 87.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 790.0000060498714, 489.6000072956085, 32.00000047683716, 64.00000095367432 ]
+                    "presentation_rect": [ 789.6000117659569, 572.0000085234642, 32.00000047683716, 64.00000095367432 ]
                 }
             },
             {
@@ -1402,7 +2150,7 @@
                     "outlettype": [ "float" ],
                     "patching_rect": [ 351.0, 445.0, 32.0, 87.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 843.6000068485737, 419.2000062465668, 30.4000004529953, 62.40000092983246 ]
+                    "presentation_rect": [ 843.2000125646591, 501.60000747442245, 30.4000004529953, 62.40000092983246 ]
                 }
             },
             {
@@ -1414,7 +2162,7 @@
                     "outlettype": [ "float" ],
                     "patching_rect": [ 311.0, 445.0, 32.0, 87.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 790.0000060498714, 419.2000062465668, 32.00000047683716, 62.40000092983246 ]
+                    "presentation_rect": [ 789.6000117659569, 501.60000747442245, 32.00000047683716, 62.40000092983246 ]
                 }
             },
             {
@@ -1448,7 +2196,7 @@
                     "numoutlets": 1,
                     "outlettype": [ "" ],
                     "parameter_enable": 0,
-                    "patching_rect": [ 1107.0, 897.0, 603.0, 270.0 ],
+                    "patching_rect": [ 199.0, 990.40001475811, 106.40000158548355, 47.20000070333481 ],
                     "presentation": 1,
                     "presentation_rect": [ 0.39999428391456604, 460.00000685453415, 767.2000114321709, 290.4000043272972 ],
                     "textfile": {
@@ -1639,7 +2387,7 @@
                     "numoutlets": 1,
                     "outlettype": [ "" ],
                     "parameter_enable": 0,
-                    "patching_rect": [ 475.0, 887.0, 606.0, 561.0 ],
+                    "patching_rect": [ 475.2000070810318, 887.2000132203102, 665.6000099182129, 550.4000082015991 ],
                     "presentation": 1,
                     "presentation_rect": [ 0.39999428391456604, 0.800000011920929, 767.2000114321709, 456.0000067949295 ],
                     "textfile": {
@@ -1925,10 +2673,10 @@
                     "maxclass": "comment",
                     "numinlets": 1,
                     "numoutlets": 0,
-                    "patching_rect": [ 977.0, 121.0, 150.0, 20.0 ],
+                    "patching_rect": [ 976.8000003099442, 51.00000071525574, 150.0, 20.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 814.8000064194202, 96.8000014424324, 150.0, 20.0 ],
-                    "text": "Switchemups"
+                    "presentation_rect": [ 811.200012087822, 92.80000138282776, 150.0, 20.0 ],
+                    "text": "Switchemups 1"
                 }
             },
             {
@@ -1937,9 +2685,9 @@
                     "maxclass": "comment",
                     "numinlets": 1,
                     "numoutlets": 0,
-                    "patching_rect": [ 977.0, 94.0, 150.0, 20.0 ],
+                    "patching_rect": [ 976.8000145554543, 27.200000405311584, 150.0, 20.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 814.8000064194202, 69.60000103712082, 150.0, 20.0 ],
+                    "presentation_rect": [ 811.200012087822, 66.4000009894371, 150.0, 20.0 ],
                     "text": "Ensemble 2"
                 }
             },
@@ -1949,60 +2697,28 @@
                     "maxclass": "comment",
                     "numinlets": 1,
                     "numoutlets": 0,
-                    "patching_rect": [ 977.0, 69.0, 150.0, 20.0 ],
+                    "patching_rect": [ 976.8000145554543, 3.0, 150.0, 20.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 814.8000064194202, 44.80000066757202, 150.0, 20.0 ],
+                    "presentation_rect": [ 811.200012087822, 41.600000619888306, 150.0, 20.0 ],
                     "text": "Ensemble 1"
                 }
             },
             {
                 "box": {
-                    "bgcolor": [ 1.0, 0.11764705882352941, 0.11764705882352941, 1.0 ],
-                    "bgcolor2": [ 0.172137149796092, 0.172137100044002, 0.172137113045018, 1.0 ],
-                    "bgfillcolor_angle": 270.0,
-                    "bgfillcolor_autogradient": 0.0,
-                    "bgfillcolor_color": [ 1.0, 0.11764705882352941, 0.11764705882352941, 1.0 ],
-                    "bgfillcolor_color1": [ 1.0, 0.11764705882352941, 0.11764705882352941, 1.0 ],
-                    "bgfillcolor_color2": [ 0.172137149796092, 0.172137100044002, 0.172137113045018, 1.0 ],
-                    "bgfillcolor_proportion": 0.5,
-                    "bgfillcolor_type": "gradient",
-                    "gradient": 1,
-                    "id": "obj-21",
-                    "maxclass": "message",
-                    "numinlets": 2,
-                    "numoutlets": 1,
-                    "outlettype": [ "" ],
-                    "patching_rect": [ 1173.0, 196.0, 111.0, 22.0 ],
-                    "text": "todo: switchemups!"
-                }
-            },
-            {
-                "box": {
-                    "id": "obj-20",
-                    "maxclass": "newobj",
-                    "numinlets": 4,
-                    "numoutlets": 4,
-                    "outlettype": [ "bang", "bang", "bang", "" ],
-                    "patching_rect": [ 956.0, 148.0, 337.0, 22.0 ],
-                    "text": "sel 0 1 2"
-                }
-            },
-            {
-                "box": {
-                    "disabled": [ 0, 0, 0 ],
+                    "disabled": [ 0, 0, 0, 0, 0, 0 ],
                     "id": "obj-19",
                     "itemtype": 0,
                     "maxclass": "radiogroup",
                     "numinlets": 1,
                     "numoutlets": 1,
-                    "offset": 20,
+                    "offset": 23,
                     "outlettype": [ "" ],
                     "parameter_enable": 0,
-                    "patching_rect": [ 956.0, 73.0, 18.0, 62.0 ],
+                    "patching_rect": [ 956.0, 3.0, 18.0, 140.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 793.2000060975552, 48.800000727176666, 18.0, 62.0 ],
-                    "size": 3,
-                    "value": 0
+                    "presentation_rect": [ 789.6000117659569, 44.80000066757202, 18.0, 140.0 ],
+                    "size": 6,
+                    "value": 2
                 }
             },
             {
@@ -2025,28 +2741,6 @@
                     "outlettype": [ "bang" ],
                     "patching_rect": [ 688.5, -24.0, 58.0, 22.0 ],
                     "text": "loadbang"
-                }
-            },
-            {
-                "box": {
-                    "id": "obj-16",
-                    "maxclass": "message",
-                    "numinlets": 2,
-                    "numoutlets": 1,
-                    "outlettype": [ "" ],
-                    "patching_rect": [ 1062.0, 196.0, 103.0, 22.0 ],
-                    "text": "scene ensemble2"
-                }
-            },
-            {
-                "box": {
-                    "id": "obj-14",
-                    "maxclass": "message",
-                    "numinlets": 2,
-                    "numoutlets": 1,
-                    "outlettype": [ "" ],
-                    "patching_rect": [ 956.0, 196.0, 103.0, 22.0 ],
-                    "text": "scene ensemble1"
                 }
             },
             {
@@ -2166,13 +2860,6 @@
             },
             {
                 "patchline": {
-                    "destination": [ "obj-2", 0 ],
-                    "midpoints": [ 965.5, 300.0, 849.5, 300.0 ],
-                    "source": [ "obj-14", 0 ]
-                }
-            },
-            {
-                "patchline": {
                     "destination": [ "obj-148", 0 ],
                     "source": [ "obj-144", 0 ]
                 }
@@ -2212,6 +2899,14 @@
                 "patchline": {
                     "destination": [ "obj-153", 0 ],
                     "midpoints": [ 614.5, 539.7103594408982, 481.5000070333481, 539.7103594408982 ],
+                    "order": 1,
+                    "source": [ "obj-154", 0 ]
+                }
+            },
+            {
+                "patchline": {
+                    "destination": [ "obj-155", 0 ],
+                    "order": 0,
                     "source": [ "obj-154", 0 ]
                 }
             },
@@ -2224,14 +2919,43 @@
             {
                 "patchline": {
                     "destination": [ "obj-2", 0 ],
-                    "midpoints": [ 1071.5, 300.0, 849.5, 300.0 ],
-                    "source": [ "obj-16", 0 ]
+                    "source": [ "obj-161", 0 ]
+                }
+            },
+            {
+                "patchline": {
+                    "destination": [ "obj-168", 0 ],
+                    "source": [ "obj-162", 0 ]
+                }
+            },
+            {
+                "patchline": {
+                    "destination": [ "obj-162", 0 ],
+                    "source": [ "obj-167", 0 ]
+                }
+            },
+            {
+                "patchline": {
+                    "destination": [ "obj-161", 0 ],
+                    "source": [ "obj-168", 0 ]
                 }
             },
             {
                 "patchline": {
                     "destination": [ "obj-18", 0 ],
                     "source": [ "obj-17", 0 ]
+                }
+            },
+            {
+                "patchline": {
+                    "destination": [ "obj-67", 0 ],
+                    "source": [ "obj-170", 0 ]
+                }
+            },
+            {
+                "patchline": {
+                    "destination": [ "obj-170", 0 ],
+                    "source": [ "obj-171", 0 ]
                 }
             },
             {
@@ -2255,7 +2979,13 @@
             },
             {
                 "patchline": {
-                    "destination": [ "obj-20", 0 ],
+                    "destination": [ "obj-179", 0 ],
+                    "source": [ "obj-180", 0 ]
+                }
+            },
+            {
+                "patchline": {
+                    "destination": [ "obj-167", 0 ],
                     "source": [ "obj-19", 0 ]
                 }
             },
@@ -2271,24 +3001,6 @@
                     "destination": [ "obj-95", 0 ],
                     "order": 0,
                     "source": [ "obj-2", 0 ]
-                }
-            },
-            {
-                "patchline": {
-                    "destination": [ "obj-14", 0 ],
-                    "source": [ "obj-20", 0 ]
-                }
-            },
-            {
-                "patchline": {
-                    "destination": [ "obj-16", 0 ],
-                    "source": [ "obj-20", 1 ]
-                }
-            },
-            {
-                "patchline": {
-                    "destination": [ "obj-21", 0 ],
-                    "source": [ "obj-20", 2 ]
                 }
             },
             {
@@ -2481,7 +3193,7 @@
             {
                 "patchline": {
                     "destination": [ "obj-32", 0 ],
-                    "midpoints": [ 517.3, 240.0, 540.3, 240.0 ],
+                    "midpoints": [ 517.3, 240.0, 540.7000079154968, 240.0 ],
                     "order": 0,
                     "source": [ "obj-52", 4 ]
                 }
@@ -2567,7 +3279,7 @@
             {
                 "patchline": {
                     "destination": [ "obj-67", 0 ],
-                    "midpoints": [ 484.5, 1475.6639404296875, 18.0, 1475.6639404296875, 18.0, 754.9371337890625, 40.5, 754.9371337890625 ],
+                    "midpoints": [ 484.7000070810318, 1475.6639404296875, 18.0, 1475.6639404296875, 18.0, 754.9371337890625, 40.5, 754.9371337890625 ],
                     "source": [ "obj-69", 0 ]
                 }
             },
@@ -2852,13 +3564,16 @@
         "autosave": 0,
         "boxgroups": [
             {
-                "boxes": [ "obj-110", "obj-31", "obj-111", "obj-30", "obj-28", "obj-29", "obj-108", "obj-109" ]
-            },
-            {
                 "boxes": [ "obj-32", "obj-96" ]
             },
             {
-                "boxes": [ "obj-115", "obj-106", "obj-9", "obj-114", "obj-102" ]
+                "boxes": [ "obj-115", "obj-114", "obj-9", "obj-102", "obj-105", "obj-98", "obj-106", "obj-99" ]
+            },
+            {
+                "boxes": [ "obj-160", "obj-159", "obj-158", "obj-19", "obj-25", "obj-24", "obj-23", "obj-113" ]
+            },
+            {
+                "boxes": [ "obj-110", "obj-111", "obj-109", "obj-28", "obj-29", "obj-30", "obj-31", "obj-108" ]
             }
         ]
     }

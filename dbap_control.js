@@ -20,6 +20,16 @@
 //   sethome <id>                make the current position its home
 //   dump                        republish state
 //
+// Line-up scenes (switchemups): a scene marked "lineup": true has no sources of
+// its own. Its units 1-8 are picked from a catalogue of every source in the
+// other scenes, plus one generic source per console channel ("_channels" in
+// the scene file). Every pick is written straight to dbap_lineups.json in the
+// patch's folder (the patch must have been saved once so it has a folder).
+//   lineupedit <0|1>            editing on / off (line-up scenes only)
+//   setkey <slot 1-8> <id | ->  put a source on a unit slot, or empty it
+//   clearlineup <scene>         empty a line-up scene (all 8 slots)
+//   savelineups <file.json>, loadlineups <file.json>   backups
+//
 // Batched (for dbap_behave.js, ~30 Hz): these update the buffer but don't
 // republish; send "flush" after a batch.
 //   posq <id> <x> <y>
@@ -62,6 +72,15 @@ let sceneName = "";
 let sources = {};
 let dirty = false;
 let sceneCount = 0;   // bumps on every recall, so listeners can reapply settings
+let currentKeys = [];
+let isLineup = false;
+let editMode = false;
+let catalog = {};         // id -> source definition (with label), for line-ups
+let lineups = null;       // { sceneName: [id or "-", x8] }
+const lineupDict = new Dict("dbap_lineups");
+const PATCHER = this.patcher;
+const LINEUPS_FILE = "dbap_lineups.json";
+const NKEYS = 8;
 
 const FT = 0.3048;
 
@@ -112,30 +131,198 @@ function loadscenes(file) {
 	const d = new Dict("dbap_scenes");
 	d.import_json(file);
 	scenes = JSON.parse(d.stringify());
-	post("dbap: scenes loaded: " + Object.keys(scenes).join(", ") + "\n");
+	buildCatalog();
+	post("dbap: scenes loaded: " + Object.keys(scenes).filter(n => n[0] !== "_").join(", ") + "\n");
 }
 
 function scene(name) {
+	loadScene(name, false);
+}
+
+function loadScene(name, keepEdit) {
 	const sc = scenes[name];
-	if (!sc) {
+	if (!sc || name[0] === "_") {
 		error("dbap: no scene " + name + "\n");
 		return;
+	}
+	let defs, keys;
+	if (sc.lineup) {
+		ensureLineups();
+		keys = padKeys(lineups[name]);
+		defs = {};
+		for (const id of keys) if (id !== "-" && catalog[id]) defs[id] = catalog[id];
+	} else {
+		defs = sc.sources || {};
+		keys = toArr(sc.keys);
 	}
 	writeSpeakers();
 	for (let i = 0; i < NPTS; i++) pts.poke(3, i, 0);
 	sources = {};
-	for (const [id, def] of Object.entries(sc.sources)) {
+	for (const [id, def] of Object.entries(defs)) {
 		const s = Object.assign({}, DEFAULTS, def);
 		s.id = id;
-		s.home = s.home.slice();
+		s.label = def.label || id.replace(/_/g, " ");
+		s.home = toArr(s.home).slice();
 		s.x = s.home[0];
 		s.y = s.home[1];
 		sources[id] = s;
 		writeSource(s);
 	}
 	sceneName = name;
+	currentKeys = keys;
+	isLineup = !!sc.lineup;
+	if (!keepEdit) editMode = false;
 	sceneCount++;
 	publish();
+}
+
+// ---- line-ups ----
+
+// every source from the ensemble scenes, then a generic source per channel
+function buildCatalog() {
+	catalog = {};
+	for (const [name, sc] of Object.entries(scenes)) {
+		if (name[0] === "_" || sc.lineup || !sc.sources) continue;
+		for (const [id, def] of Object.entries(sc.sources)) {
+			if (!catalog[id]) catalog[id] = Object.assign({}, def, { label: def.label || id.replace(/_/g, " "), enabled: true });
+		}
+	}
+	const chs = scenes._channels || {};
+	const nums = Object.keys(chs).map(Number).sort((a, b) => a - b);
+	nums.forEach((n, i) => {
+		catalog["in" + n] = {
+			label: "IN " + n + " " + chs[n],
+			home: [-3 + 6 * i / Math.max(1, nums.length - 1), 2.2],
+			acoustic: false,
+			group: "",
+			points: [{ ch: n, offset: [0, 0] }]
+		};
+	});
+}
+
+function ensureLineups() {
+	if (lineups) return;
+	const path = patchFile(LINEUPS_FILE);
+	if (path && fileExists(path)) {
+		try { lineupDict.import_json(path); } catch (e) { post("dbap: couldn't read " + path + "\n"); }
+	}
+	let o = {};
+	try { o = JSON.parse(lineupDict.stringify()) || {}; } catch (e) { o = {}; }
+	lineups = o.lineups || {};
+}
+
+function saveLineups() {
+	lineupDict.parse(JSON.stringify({ lineups }));
+	const path = patchFile(LINEUPS_FILE);
+	if (!path) {
+		post("dbap: save the patch once so line-ups can be written next to it\n");
+		return;
+	}
+	try { lineupDict.export_json(path); } catch (e) { post("dbap: couldn't write " + path + "\n"); }
+}
+
+// a file in the patch's folder, or "" if the patch has never been saved
+function patchFile(name) {
+	let fp = "";
+	try { fp = PATCHER && PATCHER.filepath ? String(PATCHER.filepath) : ""; } catch (e) { fp = ""; }
+	const i = fp.lastIndexOf("/");
+	if (i < 0) return "";
+	return fp.slice(0, i + 1) + name;
+}
+
+function fileExists(path) {
+	try {
+		const f = new File(path, "read");
+		const ok = f.isopen;
+		f.close();
+		return ok;
+	} catch (e) {
+		return false;
+	}
+}
+
+function padKeys(k) {
+	const a = toArr(k).slice(0, NKEYS).map(String);
+	while (a.length < NKEYS) a.push("-");
+	return a;
+}
+
+function channelsOf(def) {
+	return toArr(def && def.points).map(p => p.ch);
+}
+
+function lineupedit(on) {
+	if (!isLineup) {
+		post("dbap: line-ups can only be edited in a switchemups scene\n");
+		editMode = false;
+	} else {
+		editMode = !!on;
+	}
+	publish();
+}
+
+function setkey(slot, id) {
+	if (!isLineup || !editMode) {
+		post("dbap: turn on line-up editing first\n");
+		return;
+	}
+	slot = Math.round(slot);
+	id = String(id);
+	if (slot < 1 || slot > NKEYS) return;
+	if (id !== "-" && !catalog[id]) {
+		error("dbap: no source " + id + "\n");
+		return;
+	}
+	const keys = padKeys(currentKeys);
+	if (id !== "-") {
+		const mine = channelsOf(catalog[id]);
+		for (let i = 0; i < NKEYS; i++) {
+			if (i === slot - 1 || keys[i] === "-") continue;
+			if (keys[i] === id || channelsOf(catalog[keys[i]]).some(c => mine.indexOf(c) >= 0)) {
+				post("dbap: " + catalog[id].label + " shares a channel with unit " + (i + 1) + "\n");
+				return;
+			}
+		}
+	}
+	keys[slot - 1] = id;
+	ensureLineups();
+	lineups[sceneName] = keys;
+	saveLineups();
+	loadScene(sceneName, true);
+}
+
+function clearlineup(name) {
+	name = String(name);
+	const sc = scenes[name];
+	if (!sc || !sc.lineup) {
+		error("dbap: " + name + " is not a line-up scene\n");
+		return;
+	}
+	ensureLineups();
+	lineups[name] = padKeys([]);
+	saveLineups();
+	post("dbap: line-up " + name + " erased\n");
+	if (sceneName === name) loadScene(name, editMode);
+}
+
+function savelineups(file) {
+	ensureLineups();
+	saveLineups();
+	lineupDict.export_json(file);
+	post("dbap: line-ups saved to " + file + "\n");
+}
+
+function loadlineups(file) {
+	lineupDict.import_json(file);
+	lineups = null;
+	ensureLineups();
+	if (isLineup) loadScene(sceneName, false);
+	post("dbap: line-ups loaded from " + file + "\n");
+}
+
+function toArr(v) {
+	if (v === undefined || v === null) return [];
+	return Array.isArray(v) ? v : [v];
 }
 
 // ---- per-source messages ----
@@ -352,12 +539,13 @@ function writeSpeakers() {
 
 function publish() {
 	const k = room.units === "m" ? 1 : FT;
-	const sc = scenes[sceneName] || {};
 	stateDict.parse(JSON.stringify({
 		scene: sceneName,
 		sceneCount,
-		keys: sc.keys || [],
-		sticks: sc.sticks || {},
+		keys: currentKeys,
+		lineup: isLineup ? 1 : 0,
+		editing: editMode ? 1 : 0,
+		catalog: editMode ? Object.keys(catalog).map(id => ({ id, label: catalog[id].label, channels: channelsOf(catalog[id]) })) : [],
 		sources,
 		speakers: speakers.map((p, i) => ({
 			n: i + 1,

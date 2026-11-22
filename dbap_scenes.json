@@ -1,4 +1,16 @@
 {
+	"_channels": {
+		"1": "headset", "2": "pencil", "3": "DI", "4": "SM58",
+		"5": "line L", "6": "line R", "7": "line", "8": "DI",
+		"9": "baby_grand_hi", "10": "baby_grand_lo", "11": "piano hi", "12": "piano lo",
+		"13": "XLR", "14": "DI", "15": "DI", "16": "SM58",
+		"17": "pencil L", "18": "pencil R", "19": "kick", "20": "snare",
+		"21": "SM57", "22": "SM57", "23": "SM58"
+	},
+	"switchemups1": { "lineup": true },
+	"switchemups2": { "lineup": true },
+	"switchemups3": { "lineup": true },
+	"switchemups4": { "lineup": true },
 	"ensemble1": {
 		"keys": ["rich_headset", "rich_bowls", "tia_gtr", "tia_vox", "samiul_gtr", "bilal_gtr", "bilal_tape", "michael_piano"],
 		"sticks": { "L": [1, 2, 3, 4], "R": [5, 6, 7, 8] },
