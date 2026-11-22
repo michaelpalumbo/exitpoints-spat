@@ -9,7 +9,11 @@
             "modernui": 1
         },
         "classnamespace": "box",
-        "rect": [ -1646.0, 590.0, 1598.0, 954.0 ],
+        "rect": [ -1680.0, 556.0, 1602.0, 971.0 ],
+        "openinpresentation": 1,
+        "toolbarvisible": 0,
+        "enablehscroll": 0,
+        "enablevscroll": 0,
         "boxes": [
             {
                 "box": {
@@ -22,7 +26,7 @@
                     "parameter_enable": 0,
                     "patching_rect": [ 923.5999988615513, 463.900003105402, 152.80000227689743, 49.199993789196014 ],
                     "presentation": 1,
-                    "presentation_rect": [ 1024.000015258789, 12.400006830692291, 152.80000227689743, 49.199993789196014 ],
+                    "presentation_rect": [ 1345.0, 41.0, 152.80000227689743, 49.199993789196014 ],
                     "text": "HOW-TO GUIDE",
                     "texton": "Opening",
                     "usebgoncolor": 1
@@ -182,7 +186,7 @@
                     "parameter_enable": 0,
                     "patching_rect": [ 257.0, 664.6000088453293, 100.0, 20.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 789.6000117659569, 687.200010240078, 92.80000138282776, 36.80000054836273 ],
+                    "presentation_rect": [ 1096.0, 686.0, 92.80000138282776, 36.80000054836273 ],
                     "text": "Reset Show",
                     "texton": "Reset Show"
                 }
@@ -283,7 +287,7 @@
                     "numoutlets": 0,
                     "patching_rect": [ 976.8000003099442, 119.99999856948853, 150.0, 20.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 811.200012087822, 160.0000023841858, 150.0, 20.0 ],
+                    "presentation_rect": [ 1118.0, 159.0, 150.0, 20.0 ],
                     "text": "Switchemups 4"
                 }
             },
@@ -295,7 +299,7 @@
                     "numoutlets": 0,
                     "patching_rect": [ 976.8000003099442, 96.99999928474426, 150.0, 20.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 811.200012087822, 136.80000203847885, 150.0, 20.0 ],
+                    "presentation_rect": [ 1118.0, 136.0, 150.0, 20.0 ],
                     "text": "Switchemups 3"
                 }
             },
@@ -307,7 +311,7 @@
                     "numoutlets": 0,
                     "patching_rect": [ 976.8000003099442, 74.0, 150.0, 20.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 811.200012087822, 114.40000170469284, 150.0, 20.0 ],
+                    "presentation_rect": [ 1118.0, 114.0, 150.0, 20.0 ],
                     "text": "Switchemups 2"
                 }
             },
@@ -331,7 +335,7 @@
                     "numoutlets": 0,
                     "patching_rect": [ 696.5, 524.8000078201294, 165.0, 20.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 1037.6000154614449, 252.80000376701355, 208.00000309944153, 20.0 ]
+                    "presentation_rect": [ 1359.0, 281.0, 208.00000309944153, 20.0 ]
                 }
             },
             {
@@ -354,7 +358,7 @@
                     "numoutlets": 0,
                     "patching_rect": [ 472.0000070333481, 549.6000081896782, 228.0, 29.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 1037.6000154614449, 216.80000323057175, 151.20000225305557, 29.0 ]
+                    "presentation_rect": [ 1359.0, 245.0, 151.20000225305557, 29.0 ]
                 }
             },
             {
@@ -391,7 +395,7 @@
                     "parameter_enable": 0,
                     "patching_rect": [ 605.0, 364.0, 152.80000227689743, 49.199993789196014 ],
                     "presentation": 1,
-                    "presentation_rect": [ 1036.000015437603, 160.0000023841858, 152.80000227689743, 49.199993789196014 ],
+                    "presentation_rect": [ 1357.0, 188.0, 152.80000227689743, 49.199993789196014 ],
                     "text": "RECORDING STOPPED",
                     "texton": "RECORDING",
                     "usebgoncolor": 1
@@ -1004,7 +1008,7 @@
                     "numoutlets": 0,
                     "patching_rect": [ 627.2000093460083, 416.800006210804, 51.20000076293945, 55.2000008225441 ],
                     "presentation": 1,
-                    "presentation_rect": [ 1024.000015258789, 147.20000219345093, 235.2000035047531, 175.20000261068344 ],
+                    "presentation_rect": [ 1345.0, 175.0, 235.2000035047531, 175.20000261068344 ],
                     "proportion": 0.5
                 }
             },
@@ -1021,7 +1025,7 @@
                     "numoutlets": 0,
                     "patching_rect": [ 1490.4000222086906, 232.80000346899033, 128.0, 128.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 1024.000015258789, 380.00000566244125, 235.2000035047531, 326.400004863739 ],
+                    "presentation_rect": [ 1345.0, 408.0, 235.2000035047531, 326.400004863739 ],
                     "proportion": 0.5
                 }
             },
@@ -1036,7 +1040,7 @@
                     "patching_rect": [ 1490.4000222086906, 371.20000553131104, 240.0, 87.0 ],
                     "presentation": 1,
                     "presentation_linecount": 3,
-                    "presentation_rect": [ 1028.0000153183937, 384.5, 240.0, 87.0 ],
+                    "presentation_rect": [ 1349.0, 413.0, 240.0, 87.0 ],
                     "text": "QUAD Record Label \nTrack \nPlayback for Set 2"
                 }
             },
@@ -1048,7 +1052,7 @@
                     "numoutlets": 0,
                     "patching_rect": [ 784.8000116944313, 14.400000214576721, 150.0, 20.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 789.6000117659569, 16.800000250339508, 150.0, 20.0 ],
+                    "presentation_rect": [ 1096.0, 16.0, 150.0, 20.0 ],
                     "text": "Scene Selection"
                 }
             },
@@ -1061,7 +1065,7 @@
                     "numoutlets": 0,
                     "patching_rect": [ 418.19999957084656, 542.5000081658363, 57.600000858306885, 33.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 839.2000125050545, 636.0000094771385, 44.00000065565109, 33.0 ],
+                    "presentation_rect": [ 1146.0, 635.0, 44.00000065565109, 33.0 ],
                     "text": "BR"
                 }
             },
@@ -1074,7 +1078,7 @@
                     "numoutlets": 0,
                     "patching_rect": [ 385.0, 542.5000081658363, 57.600000858306885, 33.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 789.6000117659569, 636.0000094771385, 44.00000065565109, 33.0 ],
+                    "presentation_rect": [ 1096.0, 635.0, 44.00000065565109, 33.0 ],
                     "text": "BL"
                 }
             },
@@ -1087,7 +1091,7 @@
                     "numoutlets": 0,
                     "patching_rect": [ 342.69999957084656, 536.8000079989433, 57.600000858306885, 33.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 840.0000125169754, 467.2000069618225, 44.00000065565109, 33.0 ],
+                    "presentation_rect": [ 1146.0, 466.0, 44.00000065565109, 33.0 ],
                     "text": "FR"
                 }
             },
@@ -1100,7 +1104,7 @@
                     "numoutlets": 0,
                     "patching_rect": [ 308.5999991297722, 536.8000079989433, 57.600000858306885, 33.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 789.6000117659569, 467.2000069618225, 44.00000065565109, 33.0 ],
+                    "presentation_rect": [ 1096.0, 466.0, 44.00000065565109, 33.0 ],
                     "text": "FL"
                 }
             },
@@ -1116,7 +1120,7 @@
                     "parameter_enable": 1,
                     "patching_rect": [ 1490.4000222086906, 593.6000088453293, 208.0, 162.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 1028.8000153303146, 533.3000022172928, 196.0, 163.0 ],
+                    "presentation_rect": [ 1350.0, 561.0, 196.0, 163.0 ],
                     "saved_attribute_attributes": {
                         "valueof": {
                             "parameter_longname": "QUAD TRACK PLAYBACK",
@@ -1153,7 +1157,7 @@
                     "parameter_enable": 0,
                     "patching_rect": [ 1490.4000222086906, 470.4000070095062, 100.0, 20.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 1028.0000153183937, 477.30000138282776, 100.0, 20.0 ],
+                    "presentation_rect": [ 1349.0, 505.0, 100.0, 20.0 ],
                     "text": "Stop Playback",
                     "texton": "Stopping..."
                 }
@@ -1168,7 +1172,7 @@
                     "outlettype": [ "", "int" ],
                     "patching_rect": [ 1535.2000228762627, 501.60000747442245, 196.0, 19.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 1028.0000153183937, 506.1000018119812, 196.0, 19.0 ]
+                    "presentation_rect": [ 1349.0, 534.0, 196.0, 19.0 ]
                 }
             },
             {
@@ -1202,7 +1206,7 @@
                     "patching_rect": [ 566.4000084400177, 291.20000433921814, 150.40000224113464, 47.0 ],
                     "presentation": 1,
                     "presentation_linecount": 2,
-                    "presentation_rect": [ 896.8000133633614, 467.2000069618225, 111.0, 47.0 ],
+                    "presentation_rect": [ 1203.0, 466.0, 111.0, 47.0 ],
                     "text": "Headphone Monitor (Out CH 5)\n"
                 }
             },
@@ -1576,7 +1580,8 @@
                                             "speed": 1,
                                             "accel": 1
                                         }
-                                    }
+                                    },
+                                    "home": [ -2.396, -2.695 ]
                                 }
                             },
                             "ensemble2": {
@@ -1978,7 +1983,7 @@
                     "parameter_enable": 0,
                     "patching_rect": [ 23.0, 190.0, 24.0, 24.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 789.6000117659569, 425.6000063419342, 24.0, 24.0 ]
+                    "presentation_rect": [ 1096.0, 425.0, 24.0, 24.0 ]
                 }
             },
             {
@@ -2001,7 +2006,7 @@
                     "numoutlets": 0,
                     "patching_rect": [ 50.0, 192.0, 49.0, 47.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 816.8000121712685, 428.000006377697, 131.20000195503235, 20.0 ],
+                    "presentation_rect": [ 1123.0, 427.0, 131.20000195503235, 20.0 ],
                     "text": "MUTE EVERYTHING"
                 }
             },
@@ -2080,7 +2085,7 @@
                     "patching_rect": [ 1489.6000221967697, 32.0, 150.0, 181.0 ],
                     "presentation": 1,
                     "presentation_linecount": 9,
-                    "presentation_rect": [ 786.4000117182732, 195.40000480413437, 215.2000032067299, 127.0 ],
+                    "presentation_rect": [ 1093.0, 195.0, 215.2000032067299, 127.0 ],
                     "text": "todo: have a checklist for each set: \n\n1. ensure DSP is on\n2. ensure the correct ensemble scene is selected\n3. start recording\n4. reset show parameters (button)\n5. ... \n6. END of set: stop the recording"
                 }
             },
@@ -2114,7 +2119,7 @@
                     "outlettype": [ "float" ],
                     "patching_rect": [ 531.2000079154968, 252.80000376701355, 32.00000047683716, 87.20000129938126 ],
                     "presentation": 1,
-                    "presentation_rect": [ 896.8000133633614, 518.400007724762, 32.0, 70.0 ]
+                    "presentation_rect": [ 1203.0, 518.0, 32.0, 70.0 ]
                 }
             },
             {
@@ -2126,7 +2131,7 @@
                     "outlettype": [ "float" ],
                     "patching_rect": [ 431.0, 445.0, 32.0, 87.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 843.2000125646591, 572.0000085234642, 30.4000004529953, 64.00000095367432 ]
+                    "presentation_rect": [ 1150.0, 571.0, 30.4000004529953, 64.00000095367432 ]
                 }
             },
             {
@@ -2138,7 +2143,7 @@
                     "outlettype": [ "float" ],
                     "patching_rect": [ 392.0, 445.0, 32.0, 87.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 789.6000117659569, 572.0000085234642, 32.00000047683716, 64.00000095367432 ]
+                    "presentation_rect": [ 1096.0, 571.0, 32.00000047683716, 64.00000095367432 ]
                 }
             },
             {
@@ -2150,7 +2155,7 @@
                     "outlettype": [ "float" ],
                     "patching_rect": [ 351.0, 445.0, 32.0, 87.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 843.2000125646591, 501.60000747442245, 30.4000004529953, 62.40000092983246 ]
+                    "presentation_rect": [ 1150.0, 501.0, 30.4000004529953, 62.40000092983246 ]
                 }
             },
             {
@@ -2162,7 +2167,7 @@
                     "outlettype": [ "float" ],
                     "patching_rect": [ 311.0, 445.0, 32.0, 87.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 789.6000117659569, 501.60000747442245, 32.00000047683716, 62.40000092983246 ]
+                    "presentation_rect": [ 1096.0, 501.0, 32.00000047683716, 62.40000092983246 ]
                 }
             },
             {
@@ -2198,7 +2203,7 @@
                     "parameter_enable": 0,
                     "patching_rect": [ 199.0, 990.40001475811, 106.40000158548355, 47.20000070333481 ],
                     "presentation": 1,
-                    "presentation_rect": [ 0.39999428391456604, 460.00000685453415, 767.2000114321709, 290.4000043272972 ],
+                    "presentation_rect": [ 7.0, 610.0, 1069.0, 336.0 ],
                     "textfile": {
                         "filename": "nk_screen.js",
                         "flags": 0,
@@ -2389,7 +2394,7 @@
                     "parameter_enable": 0,
                     "patching_rect": [ 475.2000070810318, 887.2000132203102, 665.6000099182129, 550.4000082015991 ],
                     "presentation": 1,
-                    "presentation_rect": [ 0.39999428391456604, 0.800000011920929, 767.2000114321709, 456.0000067949295 ],
+                    "presentation_rect": [ 7.0, 1.0, 1069.0, 607.0 ],
                     "textfile": {
                         "filename": "dbap_view.js",
                         "flags": 0,
@@ -2675,7 +2680,7 @@
                     "numoutlets": 0,
                     "patching_rect": [ 976.8000003099442, 51.00000071525574, 150.0, 20.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 811.200012087822, 92.80000138282776, 150.0, 20.0 ],
+                    "presentation_rect": [ 1118.0, 92.0, 150.0, 20.0 ],
                     "text": "Switchemups 1"
                 }
             },
@@ -2687,7 +2692,7 @@
                     "numoutlets": 0,
                     "patching_rect": [ 976.8000145554543, 27.200000405311584, 150.0, 20.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 811.200012087822, 66.4000009894371, 150.0, 20.0 ],
+                    "presentation_rect": [ 1118.0, 66.0, 150.0, 20.0 ],
                     "text": "Ensemble 2"
                 }
             },
@@ -2699,7 +2704,7 @@
                     "numoutlets": 0,
                     "patching_rect": [ 976.8000145554543, 3.0, 150.0, 20.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 811.200012087822, 41.600000619888306, 150.0, 20.0 ],
+                    "presentation_rect": [ 1118.0, 41.0, 150.0, 20.0 ],
                     "text": "Ensemble 1"
                 }
             },
@@ -2716,9 +2721,9 @@
                     "parameter_enable": 0,
                     "patching_rect": [ 956.0, 3.0, 18.0, 140.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 789.6000117659569, 44.80000066757202, 18.0, 140.0 ],
+                    "presentation_rect": [ 1096.0, 44.0, 18.0, 140.0 ],
                     "size": 6,
-                    "value": 2
+                    "value": 1
                 }
             },
             {

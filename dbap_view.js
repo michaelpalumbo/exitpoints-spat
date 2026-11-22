@@ -67,7 +67,7 @@ const UNIT_COLS = [
 	[0.95, 0.5, 0.8, 1], [0.85, 0.85, 0.85, 1]
 ];
 
-const HEAD = 34, MODES = 30, UNITS = 56, PAD = 10;
+const HEAD = 34, MODES = 38, UNITS = 72, PAD = 10;
 const SIDE_M = 1.2;    // metres of see-through margin beside the speakers (for meters)
 const END_M = 0.5;     // metres of margin above and below the room
 
@@ -378,8 +378,8 @@ function drawModes(x, y, w, h) {
 		const bx = x + i * bw + 2;
 		const on = name === bh.mode;
 		rrect(bx, y, bw - 4, h, 4, on ? C_LIT : C_PANEL);
-		text(key, bx + 6, y + h / 2 + 4, 10, on ? C_BG : C_DIM);
-		text(fit(name, 10, bw - 24), bx + 18, y + h / 2 + 4, 10, on ? C_BG : C_TEXT);
+		text(key, bx + 7, y + h / 2 + 5, 13, on ? C_BG : C_DIM);
+		text(fit(name, 13, bw - 30), bx + 23, y + h / 2 + 5, 13, on ? C_BG : C_TEXT);
 		hits.push({ x: bx, y, w: bw - 4, h, key: key.charCodeAt(0) });
 	});
 }
@@ -396,8 +396,8 @@ function drawUnits(x, y, w, h) {
 		rrect(bx, y, bw - 4, h, 4, picker === n ? C_SPK : C_PANEL);
 		if (st.editing) hits.push({ x: bx, y, w: bw - 4, h, pick: n });
 		if (!u) {
-			text("" + n, bx + 6, y + 15, 11, C_SPK);
-			if (st.editing) text("choose...", bx + 10, y + 32, 10, C_LIT);
+			text("" + n, bx + 10, y + 19, 16, C_SPK);
+			if (st.editing) text("CHOOSE...", bx + 10, y + 41, 13, C_LIT);
 			continue;
 		}
 		// active: full border; frozen: just the bar on the left
@@ -410,13 +410,13 @@ function drawUnits(x, y, w, h) {
 			rrect(bx, y, 5, h, 2, col);
 		}
 		// row 1: number and state; row 2: name; row 3: input channels
-		text("" + n, bx + 10, y + 15, 12, col);
+		text("" + n, bx + 10, y + 19, 16, col);
 		let tag = u.active ? "moving" : "frozen";
 		if (bh.mode === "assign") tag = (u.selected ? "SELECTED" : strv(u.assign)) + " - " + tag;
 		else if (u.hasLoop) tag += " - loop";
-		text(fit(tag, 9, bw - 34), bx + 24, y + 15, 9, u.selected ? C_LIT : C_DIM);
-		text(fit(unitLabel(u), 10, bw - 16), bx + 10, y + 32, 10, st.editing ? C_LIT : C_TEXT);
-		text(inLabel(u), bx + 10, y + h - 8, 10, C_WHITE);
+		text(fit(tag, 12, bw - 38), bx + 28, y + 18, 12, u.selected ? C_LIT : C_DIM);
+		text(fit(unitLabel(u).toUpperCase(), 13, bw - 16), bx + 10, y + 41, 13, st.editing ? C_LIT : C_TEXT);
+		text(inLabel(u), bx + 10, y + h - 9, 13, C_WHITE);
 		if (!st.editing) hits.push({ x: bx, y, w: bw - 4, h, unit: n });
 	}
 }
