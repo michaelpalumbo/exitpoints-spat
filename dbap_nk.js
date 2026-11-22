@@ -11,9 +11,11 @@
 //                   the LED flashes slowly while selected. Tap again to deselect.
 //             hold 2 s: clear the unit's loop (the LED flashes fast while held;
 //                   let go early to keep the loop). Hold several to clear several.
-//             Otherwise the LED is lit when the unit has a loop.
+//             Otherwise the LED is lit while the unit is playing its loop (its
+//             behaviour is loop and it has one).
 //   knob      the unit's value for the current page:
-//     <<   (43)  spread    per unit: point source to diffuse (1 cm to 4 m)
+//     <<   (43)  spread    per unit: point source to diffuse (1 cm to 4 m,
+//                          on a curve that changes visibly from the first turn)
 //     >>   (44)  width     per unit: stereo / multi-mic width, x0 to x5
 //     STOP (42)  range     per unit, per behaviour: how far it moves from home
 //     PLAY (41)  speed     per unit, per behaviour: x1/4 to x6
@@ -218,7 +220,7 @@ function flash() {
 		} else if (sDown[n]) {
 			on = 1;
 		} else {
-			on = u.hasLoop;
+			on = playingLoop(u);
 		}
 		led(S0 + n, on);
 	}
@@ -245,6 +247,10 @@ function hwKnob(k, pos) {
 	display();
 }
 
+function playingLoop(u) {
+	return u.hasLoop && u.beh === "loop";
+}
+
 function pickedUp(prev, pos, cur) {
 	const crossed = prev >= 0 && (prev - cur) * (pos - cur) <= 0;
 	return crossed || Math.abs(pos - cur) <= PICK;
@@ -268,7 +274,7 @@ function knobNorm(k) {
 	}
 	const u = U[k];
 	if (!u.id) return -1;
-	if (name === "spread") return Math.log(u.spread / 0.01) / Math.log(400);
+	if (name === "spread") return spreadNorm(u.spread);
 	if (name === "width") return u.hasWidth ? u.width / 5 : -1;
 	if (name === "range") return u.range;
 	if (name === "speed") return speedNorm(u.speed);
@@ -285,7 +291,7 @@ function setKnob(k, v) {
 	}
 	const u = U[k];
 	let val;
-	if (name === "spread") val = 0.01 * Math.pow(400, v);
+	if (name === "spread") val = spreadOf(v);
 	else if (name === "width") val = v * 5;
 	else if (name === "range") val = v;
 	else if (name === "speed") val = speedOf(v);
@@ -324,6 +330,8 @@ function posOfDb(db) { return (Math.max(DB_LO, Math.min(DB_HI, db)) - DB_LO) / (
 // x1/4 to x6 on a log scale (x1 sits a bit left of centre)
 function speedOf(v) { return 0.25 * Math.pow(24, v); }
 function speedNorm(s) { return Math.log(Math.max(0.25, s) / 0.25) / Math.log(24); }
+function spreadOf(v) { return 0.01 + 3.99 * v * v; }
+function spreadNorm(s) { return Math.sqrt(Math.max(0, Math.min(1, (s - 0.01) / 3.99))); }
 function glideOf(v) { return 0.2 * Math.pow(50, v); }
 function glideNorm(s) { return Math.log(Math.max(0.2, s) / 0.2) / Math.log(50); }
 
@@ -348,7 +356,7 @@ function labels() {
 		const has = !!u.id;
 		let sl = "";
 		if (has && u.selected) sl = "selected";
-		else if (has && u.hasLoop) sl = "loop";
+		else if (has && playingLoop(u)) sl = "loop";
 		outlet(1, "btn", S0 + n, sl);
 		outlet(1, "btn", M0 + n, has ? (u.active ? "moving" : "frozen") : "");
 		outlet(1, "btn", R0 + n, has ? "home" : "");

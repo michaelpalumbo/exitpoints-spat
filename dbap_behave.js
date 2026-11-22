@@ -81,6 +81,13 @@ let lastAsk = 0;
 let tickCount = 0;
 const selected = new Set();
 
+// Dictionaries are held open for the life of the script. A named dict that
+// nothing holds can be freed between writes, and a reader then gets an empty one.
+const stateIn = new Dict("dbap_state");
+const behDict = new Dict("dbap_behave");
+const loopsDict = new Dict("dbap_loops");
+const paramsDict = new Dict("dbap_params");
+
 let params = null;          // { global: {speed, glide}, scenes: { name: { id: {...} } } }
 let paramsDirty = false;
 // Don't read or write the stored settings until the patch has finished loading
@@ -298,7 +305,9 @@ function clearloop(n) {
 
 function dictionary(name) {
 	if (name !== "dbap_state") return;
-	state = JSON.parse(new Dict(name).stringify());
+	const o = JSON.parse(stateIn.stringify());
+	if (!o || !o.sources) return;   // empty or partial: keep the last good state
+	state = o;
 	spk = toArr(state.speakers).map(s => [s.x, s.y]);
 	if (spk.length) {
 		const xs = spk.map(p => p[0]);
@@ -319,7 +328,7 @@ function dictionary(name) {
 function ensureParams() {
 	if (params) return;
 	let o = {};
-	try { o = JSON.parse(new Dict("dbap_params").stringify()) || {}; } catch (e) { o = {}; }
+	try { o = JSON.parse(paramsDict.stringify()) || {}; } catch (e) { o = {}; }
 	params = { global: o.global || {}, scenes: o.scenes || {} };
 	if (typeof params.global.speed === "number") tempo = params.global.speed;
 	if (typeof params.global.glide === "number") glideTime = params.global.glide;
@@ -327,19 +336,19 @@ function ensureParams() {
 }
 
 function writeParams() {
-	new Dict("dbap_params").parse(JSON.stringify(params));
+	paramsDict.parse(JSON.stringify(params));
 	paramsDirty = false;
 }
 
 function saveparams(file) {
 	if (!params) return;
 	writeParams();
-	new Dict("dbap_params").export_json(file);
+	paramsDict.export_json(file);
 	post("dbap_behave: settings saved to " + file + "\n");
 }
 
 function loadparams(file) {
-	new Dict("dbap_params").import_json(file);
+	paramsDict.import_json(file);
 	params = null;
 	ensureParams();
 	sig = "";
@@ -770,8 +779,7 @@ function sendUnits() {
 }
 
 function publish() {
-	const d = new Dict("dbap_behave");
-	d.parse(JSON.stringify({
+	behDict.parse(JSON.stringify({
 		mode,
 		modeKey: MODE_KEYS[MODE_NAMES.indexOf(mode)],
 		modes: MODE_NAMES.map((m, i) => ({ key: MODE_KEYS[i], name: m })),
@@ -809,7 +817,7 @@ function publishLoops() {
 		for (let i = 0; i < L.pts.length; i += step) pts.push([L.pts[i][1], L.pts[i][2]]);
 		out[u.n] = pts;
 	}
-	new Dict("dbap_loops").parse(JSON.stringify({ loops: out }));
+	loopsDict.parse(JSON.stringify({ loops: out }));
 	outlet(2, "dictionary", "dbap_loops");
 }
 

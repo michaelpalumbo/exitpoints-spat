@@ -5,12 +5,12 @@
 //   a halo showing each unit's spread, the range preview
 //   while the range knob moves, and recorded loop paths in loop mode.
 //
-// The strips left of the left speakers and right of the right speakers are
-// see-through, so meter~ objects placed behind the v8ui show through
-// (send the meters to the back with Arrange > Send to Back).
+// The background is solid black. "seethrough 1" makes the strips left and
+// right of the speakers see-through, for meter~ objects placed behind the v8ui.
 //
 // Inlet:
 //   dictionary dbap_state | dbap_behave | dbap_loops
+//   seethrough <0|1>     side strips see-through (1) or solid black (0, default)
 //
 // Mouse:
 //   GLIDE/CUT box              same as TAB
@@ -32,8 +32,8 @@ mgraphics.init();
 mgraphics.relative_coords = 0;
 mgraphics.autofill = 0;
 
-const C_BG = [0.11, 0.11, 0.12, 1];
-const C_SEE = [0.11, 0.11, 0.12, 0.25];   // see-through side strips
+const C_BG = [0, 0, 0, 1];
+const C_SEE = [0, 0, 0, 0.25];            // see-through side strips (seethrough 1)
 const C_PANEL = [0.16, 0.16, 0.18, 1];
 const C_ROOM = [0.14, 0.14, 0.16, 1];
 const C_LINE = [0.35, 0.35, 0.38, 1];
@@ -53,22 +53,44 @@ const HEAD = 34, MODES = 30, UNITS = 40, PAD = 10;
 const SIDE_M = 1.2;    // metres of see-through margin beside the speakers (for meters)
 const END_M = 0.5;     // metres of margin above and below the room
 
+// held open for the life of the view (see dbap_behave.js)
+const DICTS = {
+	dbap_state: new Dict("dbap_state"),
+	dbap_behave: new Dict("dbap_behave"),
+	dbap_loops: new Dict("dbap_loops")
+};
+
 let st = null;      // dbap_state
 let bh = null;      // dbap_behave
 let loops = {};     // unit n -> [[x, y], ...]
 let hits = [];      // clickable boxes from the last paint
 let map = null;     // metres <-> pixels, from the last paint
 let dragUnit = 0;
+let seeThrough = 0;
+
+function seethrough(on) {
+	seeThrough = on ? 1 : 0;
+	mgraphics.redraw();
+}
 
 function dictionary(name) {
-	if (name !== "dbap_state" && name !== "dbap_behave" && name !== "dbap_loops") {
+	if (!DICTS[name]) {
 		post("dbap_view: ignoring dictionary " + name + "\n");
 		return;
 	}
-	const o = JSON.parse(new Dict(name).stringify());
-	if (name === "dbap_state") st = o;
-	else if (name === "dbap_behave") bh = o;
-	else loops = o.loops || {};
+	let o;
+	try { o = JSON.parse(DICTS[name].stringify()); } catch (e) { return; }
+	// an empty or partial update would blank the view for a frame: keep the last good one
+	if (name === "dbap_state") {
+		if (!o || !o.sources) return;
+		st = o;
+	} else if (name === "dbap_behave") {
+		if (!o || !o.mode || !o.modes) return;
+		bh = o;
+	} else {
+		if (!o || !o.loops) return;
+		loops = o.loops;
+	}
 	mgraphics.redraw();
 }
 
@@ -139,8 +161,8 @@ function paint() {
 		fillRect(0, 0, W, mapTop, C_BG);
 		fillRect(0, mapBot, W, H - mapBot, C_BG);
 		fillRect(L, mapTop, R - L, mapBot - mapTop, C_BG);
-		fillRect(0, mapTop, Math.max(0, L), mapBot - mapTop, C_SEE);
-		fillRect(R, mapTop, Math.max(0, W - R), mapBot - mapTop, C_SEE);
+		fillRect(0, mapTop, Math.max(0, L), mapBot - mapTop, seeThrough ? C_SEE : C_BG);
+		fillRect(R, mapTop, Math.max(0, W - R), mapBot - mapTop, seeThrough ? C_SEE : C_BG);
 	} else {
 		fillRect(0, 0, W, H, C_BG);
 	}
@@ -274,18 +296,17 @@ function drawMap(spk) {
 		const frozen = n && unitInfo[n] && !unitInfo[n].active;
 		const pts = pointsOf(src).map(q => P(q[0], q[1]));
 
-		// spread halo: radius = the spatial blur
+		// spread halo: always a small ring (point source), growing with the spatial blur
 		const blur = num(src.blur, 0.01);
-		if (blur > 0.05) {
-			for (const q of pts) {
-				setc(col, 0.12);
-				mgraphics.arc(q[0], q[1], blur * s, 0, Math.PI * 2);
-				mgraphics.fill();
-				setc(col, 0.35);
-				mgraphics.set_line_width(1);
-				mgraphics.arc(q[0], q[1], blur * s, 0, Math.PI * 2);
-				mgraphics.stroke();
-			}
+		const hr = 11 + blur * s;
+		for (const q of pts) {
+			setc(col, 0.12);
+			mgraphics.arc(q[0], q[1], hr, 0, Math.PI * 2);
+			mgraphics.fill();
+			setc(col, 0.35);
+			mgraphics.set_line_width(1);
+			mgraphics.arc(q[0], q[1], hr, 0, Math.PI * 2);
+			mgraphics.stroke();
 		}
 
 		setc(col);

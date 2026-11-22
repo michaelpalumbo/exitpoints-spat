@@ -37,10 +37,11 @@
 //   adjust <n> <dB> <ms>        manual gain / delay offset for speaker n
 //   calibrate <0|1>             bypass / enable delay and gain trims
 //
-// Speakers: 1 FL, 2 FR, 3 SL, 4 SR, 5 BL, 6 BR.
+// Speakers: 1 to 6 of them, numbered as in the room file (default quad:
+// 1 FL, 2 FR, 3 BL, 4 BR). The count comes from the room file.
 // Mark A is the LEFT mark when facing the stage, B the right one.
 // Speaker positions are solved from the A/B distances and centred on the
-// middle of the six speakers.
+// middle of the speakers.
 //
 // Outlet: "dictionary dbap_state" after every change (for UI and debugging).
 
@@ -49,10 +50,11 @@ inlets = 1;
 outlets = 1;
 
 const NPTS = 24;
-const NSPK = 6;
+const MAXSPK = 6;
+const COUNT_FRAME = 6;   // frame of dbap_spk that tells gen~ how many speakers
 
 const pts = new Buffer("dbap_pts");
-const spkbuf = new Buffer("dbap_spk");   // 6 frames x 4 ch: x, y, delay ms, gain
+const spkbuf = new Buffer("dbap_spk");   // frames 0-5: x, y, delay ms, gain; frame 6: count
 const stateDict = new Dict("dbap_state");
 
 let scenes = {};
@@ -63,7 +65,7 @@ let sceneCount = 0;   // bumps on every recall, so listeners can reapply setting
 
 const FT = 0.3048;
 
-// default: 24 ft square, marks A and B at the FL and FR speakers
+// default: 24 ft square quad, marks A and B at the FL and FR speakers
 const DEFAULT_ROOM = {
 	units: "ft",
 	baseline: 24,
@@ -71,10 +73,8 @@ const DEFAULT_ROOM = {
 	speakers: {
 		"1": { label: "FL", a: 0,      b: 24 },
 		"2": { label: "FR", a: 24,     b: 0 },
-		"3": { label: "SL", a: 12,     b: 26.833 },
-		"4": { label: "SR", a: 26.833, b: 12 },
-		"5": { label: "BL", a: 24,     b: 33.941 },
-		"6": { label: "BR", a: 33.941, b: 24 }
+		"3": { label: "BL", a: 24,     b: 33.941 },
+		"4": { label: "BR", a: 33.941, b: 24 }
 	},
 	listener: [0, 0],
 	operator: [8, -8],
@@ -96,11 +96,11 @@ function loadbang() {
 }
 
 function init() {
-	// buffer~ dbap_pts 1 5 and dbap_spk 1 2 already hold ~44 frames at 1 ms,
+	// buffer~ dbap_pts 1 5 and dbap_spk 1 4 already hold ~44 frames at 1 ms,
 	// which is enough. The resize is a nicety; don't let it stop init.
 	try {
 		pts.send("sizeinsamps", NPTS);
-		spkbuf.send("sizeinsamps", NSPK);
+		spkbuf.send("sizeinsamps", MAXSPK + 1);
 	} catch (e) {
 		post("dbap: buffer resize skipped (" + e + ")\n");
 	}
@@ -237,7 +237,7 @@ function operator(x, y) { room.operator = [x, y]; publish(); }
 function calibrate(on) { calOn = !!on; writeSpeakers(); publish(); }
 
 function adjust(n, db, ms) {
-	if (n < 1 || n > NSPK) return;
+	if (n < 1 || n > nspk()) return;
 	room.adjust[n] = { gain_db: db || 0, delay_ms: ms || 0 };
 	updateRoom();
 }
@@ -254,7 +254,8 @@ function solveRoom() {
 	const k = room.units === "m" ? 1 : FT;
 	const L = room.baseline;
 	const local = [];
-	for (let n = 1; n <= NSPK; n++) {
+	const ns = nspk();
+	for (let n = 1; n <= ns; n++) {
 		const { a, b } = room.speakers[n];
 		const x = (a * a - b * b + L * L) / (2 * L);
 		const y2 = a * a - x * x;
@@ -263,8 +264,8 @@ function solveRoom() {
 		}
 		local.push([x, -Math.sqrt(Math.max(0, y2))]);
 	}
-	const cx = local.reduce((t, p) => t + p[0], 0) / NSPK;
-	const cy = local.reduce((t, p) => t + p[1], 0) / NSPK;
+	const cx = local.reduce((t, p) => t + p[0], 0) / ns;
+	const cy = local.reduce((t, p) => t + p[1], 0) / ns;
 	speakers = local.map(p => [(p[0] - cx) * k, (p[1] - cy) * k]);
 }
 
@@ -284,6 +285,13 @@ function calcCal() {
 			gain_db: 20 * Math.log10(di / dmax) + (adj.gain_db || 0)
 		};
 	});
+}
+
+// how many speakers the room file has (1-6), numbered 1..n
+function nspk() {
+	let n = 0;
+	while (n < MAXSPK && room.speakers[n + 1]) n++;
+	return Math.max(1, n);
 }
 
 function round(v, places) {
@@ -331,12 +339,15 @@ function writePoint(idx, x, y, lvl, sl, bl) {
 }
 
 function writeSpeakers() {
-	for (let i = 0; i < NSPK; i++) {
-		spkbuf.poke(1, i, speakers[i][0]);
-		spkbuf.poke(2, i, speakers[i][1]);
-		spkbuf.poke(3, i, calOn ? cal[i].delay_ms : 0);
-		spkbuf.poke(4, i, calOn ? Math.pow(10, cal[i].gain_db / 20) : 1);
+	const ns = speakers.length;
+	for (let i = 0; i < MAXSPK; i++) {
+		const on = i < ns;
+		spkbuf.poke(1, i, on ? speakers[i][0] : 0);
+		spkbuf.poke(2, i, on ? speakers[i][1] : 0);
+		spkbuf.poke(3, i, on && calOn ? cal[i].delay_ms : 0);
+		spkbuf.poke(4, i, on ? (calOn ? Math.pow(10, cal[i].gain_db / 20) : 1) : 0);
 	}
+	spkbuf.poke(1, COUNT_FRAME, ns);
 }
 
 function publish() {
