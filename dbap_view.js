@@ -1,6 +1,8 @@
 // dbap_view.js  (for a [v8ui dbap_view.js] object)
 //
-// Room view for the panner. The stage end is at the top.
+// Room view for the panner. The stage end is at the top. Top to bottom: the
+// room, the mode buttons, the header (scene, mode, description, line-up
+// button, glide/cut), the unit boxes.
 //   speakers, sources coloured by unit (1-8), the calibration position (+),
 //   a halo showing each unit's spread, the range preview
 //   while the range knob moves, and recorded loop paths in loop mode.
@@ -50,7 +52,7 @@ const C_WHITE = [1, 1, 1, 1];
 
 // one line per mode for the header
 const DESCRIPTIONS = {
-	manual: "units sit at their homes. Drag a unit to move its home",
+	manual: "drag a unit to set its home. R sends it there from any mode",
 	drift: "units wander slowly around the whole room",
 	orbit: "units circle the middle of the room",
 	hop: "units jump between speakers at random",
@@ -84,6 +86,7 @@ let loops = {};     // unit n -> [[x, y], ...]
 let hits = [];      // clickable boxes from the last paint
 let map = null;     // metres <-> pixels, from the last paint
 let dragUnit = 0;
+let dragOff = [0, 0];   // unit centre minus mouse, in metres, while dragging
 let picker = 0;     // unit slot whose source list is open (line-up editing), 0 = closed
 let pickHits = [];
 let seeThrough = 0;
@@ -171,7 +174,11 @@ function paint() {
 		return;
 	}
 
-	const mapTop = HEAD + PAD / 2, mapBot = H - MODES - UNITS - PAD;
+	// layout, top to bottom: room map, mode buttons, header, unit boxes
+	const unitsY = H - UNITS - PAD / 2;
+	const headY = unitsY - HEAD;
+	const modesY = headY - MODES;
+	const mapTop = PAD / 2, mapBot = modesY - PAD / 2;
 	const spk = toArr(st.speakers);
 	layout(PAD, mapTop, W - PAD * 2, mapBot - mapTop, spk);
 
@@ -187,10 +194,10 @@ function paint() {
 		fillRect(0, 0, W, H, C_BG);
 	}
 
-	drawHeader(W);
 	if (map) drawMap(spk);
-	drawModes(PAD, H - MODES - UNITS - PAD / 2, W - PAD * 2, MODES - 4);
-	drawUnits(PAD, H - UNITS - PAD / 2, W - PAD * 2, UNITS - 4);
+	drawModes(PAD, modesY, W - PAD * 2, MODES - 4);
+	drawHeader(W, headY);
+	drawUnits(PAD, unitsY, W - PAD * 2, UNITS - 4);
 	if (!st.editing) picker = 0;
 	drawPicker(W, mapTop, mapBot);
 }
@@ -209,33 +216,36 @@ function layout(x, y, w, h, spk) {
 	};
 }
 
-function drawHeader(W) {
+function drawHeader(W, y0) {
 	const h = HEAD;
-	rrect(4, 4, W - 8, h - 6, 5, C_PANEL);
-	text("SCENE", 14, 15, 9, C_DIM);
-	text(pretty(st.scene || "-").toUpperCase(), 14, 29, 13, C_TEXT);
+	rrect(4, y0 + 2, W - 8, h - 6, 5, C_PANEL);
+	text("SCENE", 14, y0 + 13, 9, C_DIM);
+	text(pretty(st.scene || "-").toUpperCase(), 14, y0 + 27, 13, C_TEXT);
 	if (!bh) return;
-	text("MODE", 150, 15, 9, C_DIM);
-	text((strv(bh.modeKey) + "  " + strv(bh.mode)).toUpperCase(), 150, 29, 13, C_TEXT);
-	let hx = 290;
+	text("MODE", 150, y0 + 13, 9, C_DIM);
+	const mtitle = (strv(bh.modeKey) + "  " + strv(bh.modeTitle || bh.mode)).toUpperCase();
+	text(mtitle, 150, y0 + 27, 13, C_TEXT);
+	mgraphics.set_font_size(13);
+	const titleEnd = 150 + mgraphics.text_measure(mtitle)[0] + 20;
+	let hx = Math.max(290, titleEnd);
 	if (st.lineup) {
 		const ed = !!st.editing, lw = 110;
-		rrect(hx, 8, lw, h - 14, 4, ed ? C_LIT : C_BLUE);
-		text(ed ? "DONE" : "EDIT LINE-UP", hx + lw / 2, 8 + (h - 14) / 2 + 4, 10, C_BG, "c");
-		hits.push({ x: hx, y: 8, w: lw, h: h - 14, lineup: ed ? 0 : 1 });
+		rrect(hx, y0 + 6, lw, h - 14, 4, ed ? C_LIT : C_BLUE);
+		text(ed ? "DONE" : "EDIT LINE-UP", hx + lw / 2, y0 + 6 + (h - 14) / 2 + 4, 10, C_BG, "c");
+		hits.push({ x: hx, y: y0 + 6, w: lw, h: h - 14, lineup: ed ? 0 : 1 });
 		hx += lw + 12;
 	}
 	const desc = st.editing ? "click a unit box below to choose its source" : (DESCRIPTIONS[bh.mode] || "");
 	const room = W - 120 - 10 - 150 - hx;   // up to the speed readout
-	if (desc && room > 60) text(fit("description: " + desc, 12, room), hx, 27, 12, st.editing ? C_LIT : C_WHITE);
+	if (desc && room > 60) text(fit("description: " + desc, 12, room), hx, y0 + 25, 12, st.editing ? C_LIT : C_WHITE);
 
-	const bw = 120, bx = W - bw - 10, by = 8, bhh = h - 14;
+	const bw = 120, bx = W - bw - 10, by = y0 + 6, bhh = h - 14;
 	const g = bh.glide;
 	rrect(bx, by, bw, bhh, 4, g ? C_BLUE : C_LIT);
 	text(g ? "GLIDE " + num(bh.glideTime, 0).toFixed(1) + "s" : "CUT", bx + bw / 2, by + bhh / 2 + 5, 12, C_BG, "c");
 	text("TAB", bx - 8, by + bhh / 2 + 4, 9, C_DIM, "r");
 	hits.push({ x: bx, y: by, w: bw, h: bhh, key: 9 });
-	text("SPEED x" + num(bh.speed, 1).toFixed(2), bx - 40, 29, 11, C_DIM, "r");
+	text("SPEED x" + num(bh.speed, 1).toFixed(2), bx - 40, y0 + 27, 11, C_DIM, "r");
 }
 
 function drawMap(spk) {
@@ -373,13 +383,13 @@ function drawModes(x, y, w, h) {
 	const ms = toArr(bh.modes);
 	const bw = w / Math.max(1, ms.length);
 	ms.forEach((m, i) => {
-		const key = strv(m.key), name = strv(m.name);
+		const key = strv(m.key), name = strv(m.name), lab = strv(m.label || m.name);
 		if (!key) return;
 		const bx = x + i * bw + 2;
 		const on = name === bh.mode;
 		rrect(bx, y, bw - 4, h, 4, on ? C_LIT : C_PANEL);
 		text(key, bx + 7, y + h / 2 + 5, 13, on ? C_BG : C_DIM);
-		text(fit(name, 13, bw - 30), bx + 23, y + h / 2 + 5, 13, on ? C_BG : C_TEXT);
+		text(fit(lab, 13, bw - 30), bx + 23, y + h / 2 + 5, 13, on ? C_BG : C_TEXT);
 		hits.push({ x: bx, y, w: bw - 4, h, key: key.charCodeAt(0) });
 	});
 }
@@ -411,7 +421,7 @@ function drawUnits(x, y, w, h) {
 		}
 		// row 1: number and state; row 2: name; row 3: input channels
 		text("" + n, bx + 10, y + 19, 16, col);
-		let tag = u.active ? "moving" : "frozen";
+		let tag = u.active ? "movable" : "frozen";
 		if (bh.mode === "assign") tag = (u.selected ? "SELECTED" : strv(u.assign)) + " - " + tag;
 		else if (u.hasLoop) tag += " - loop";
 		text(fit(tag, 12, bw - 38), bx + 28, y + 18, 12, u.selected ? C_LIT : C_DIM);
@@ -479,17 +489,28 @@ function drawPicker(W, top, bot) {
 
 // ---- mouse ----
 
+// the unit under the mouse: its centre or any of its points (mics) counts.
+// Returns { n, off } where off is the unit centre minus the mouse position in
+// metres, so the unit doesn't jump when grabbed by one of its points.
 function unitAt(qx, qy) {
-	if (!map || !bh || !st) return 0;
-	let best = 0, bestD = 18;   // pixels
+	if (!map || !bh || !st) return null;
+	let best = null, bestD = 18;   // pixels
 	for (const u of toArr(bh.units)) {
 		const ms = toArr(u.members).map(m => st.sources[m]).filter(Boolean);
 		if (!ms.length) continue;
 		const cx = ms.reduce((t, s) => t + s.x, 0) / ms.length;
 		const cy = ms.reduce((t, s) => t + s.y, 0) / ms.length;
-		const p = map.P(cx, cy);
-		const d = Math.hypot(p[0] - qx, p[1] - qy);
-		if (d < bestD) { bestD = d; best = u.n; }
+		const targets = [[cx, cy]];
+		for (const src of ms) for (const q of pointsOf(src)) targets.push(q);
+		for (const q of targets) {
+			const p = map.P(q[0], q[1]);
+			const d = Math.hypot(p[0] - qx, p[1] - qy);
+			if (d < bestD) {
+				bestD = d;
+				const mm = map.M(qx, qy);
+				best = { n: u.n, off: [cx - mm[0], cy - mm[1]] };
+			}
+		}
 	}
 	return best;
 }
@@ -524,15 +545,17 @@ function onclick(x, y, but, cmd, shift) {
 	}
 	if (st && st.editing) return;   // no dragging while editing the line-up
 	if (!bh || ["manual", "loop", "assign"].indexOf(bh.mode) < 0) return;
-	const n = unitAt(x, y);
-	if (!n) return;
+	const hit = unitAt(x, y);
+	if (!hit) return;
+	const n = hit.n;
 	if (shift && (bh.mode === "loop" || bh.mode === "assign")) {
 		outlet(0, "clearloop", n);
 		return;
 	}
 	dragUnit = n;
+	dragOff = hit.off;
 	const m = map.M(x, y);
-	outlet(0, "drag", n, m[0], m[1]);
+	outlet(0, "drag", n, m[0] + dragOff[0], m[1] + dragOff[1]);
 }
 
 function ondrag(x, y, but) {
@@ -543,7 +566,7 @@ function ondrag(x, y, but) {
 		return;
 	}
 	const m = map.M(x, y);
-	outlet(0, "drag", dragUnit, m[0], m[1]);
+	outlet(0, "drag", dragUnit, m[0] + dragOff[0], m[1] + dragOff[1]);
 }
 
 function onresize() {

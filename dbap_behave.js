@@ -21,7 +21,9 @@
 //
 // From dbap_nk.js (or the room view):
 //   toggle <n>                 unit n active / frozen in the current mode
-//   home <n>                   send unit n home and freeze it there
+//   home <n>                   send unit n home. M off: it stays there. M on: once
+//                              it gets home it goes straight back to the mode
+//                              (with cut, after 1 s at home)
 //   select <n>                 toggle unit n's selection (assign mode only)
 //   unitlevel <n> <dB>         -70 or lower = off
 //   unitparam <n> <name> <v>   spread, width: per unit (all modes)
@@ -63,6 +65,7 @@ const SMOOTH_SLEW = 50;     // ms, continuous movement
 const HOP_SLEW = 3;         // ms, hard cuts (just enough to avoid clicks)
 const LOOP_CLOSE = 0.4;     // s, glide from a loop's end back to its start
 const LOOP_MAX_PTS = 3000;
+const CUT_HOME_DWELL = 1000; // ms at home before going back, with cut (M on)
 const TAU = Math.PI * 2;
 const NUNITS = 8;
 
@@ -174,6 +177,7 @@ function toggle(n) {
 		outlet(1, "active", n, 1);
 		return;
 	}
+	cancelHoming(u);
 	setActive(u, !isActive(u));
 	if (isActive(u)) {
 		resetBehaviour(u);
@@ -188,13 +192,32 @@ function toggle(n) {
 
 function home(n) {
 	const u = unitOf(n);
-	if (!u) return;
-	setActive(u, false);
-	u.hold = u.home.slice();
+	if (!u || behOf(u) === "manual") return;   // set home positions: already home
+	// travel home; tick() finishes the trip (see finishHoming)
+	if (!isActive(u)) u.hold = u.home.slice();   // M off: stay home afterwards
 	startTrans(u, glide ? glideTime : 0);
-	resetBehaviour(u);
-	outlet(1, "active", n, 0);
+	u.homing = { until: glide ? 0 : Date.now() + CUT_HOME_DWELL };
+	outlet(1, "homing", n, 1);
 	publish();
+}
+
+// called by tick() when a unit that was sent home has got there
+function finishHoming(u) {
+	u.homing = null;
+	if (isActive(u)) {
+		// M on: back to whatever the mode is doing, as if M had just been pressed
+		resetBehaviour(u);
+		startTrans(u, glide ? glideTime : 0);
+	} else {
+		u.hold = u.home.slice();
+	}
+	outlet(1, "homing", u.n, 0);
+}
+
+function cancelHoming(u) {
+	if (!u.homing) return;
+	u.homing = null;
+	outlet(1, "homing", u.n, 0);
 }
 
 function select(n) {
@@ -510,6 +533,7 @@ function buildUnits() {
 			dragPos: null,
 			rec: null,
 			hg: null,
+			homing: null,
 			st: {}
 		};
 		for (const m of members) u.baseWidth[m] = state.sources[m].width === undefined ? 1 : state.sources[m].width;
@@ -550,6 +574,7 @@ function setMode(name) {
 	if (mode === "assign" && name !== "assign") clearSelection();
 	mode = name;
 	for (const u of units) {
+		cancelHoming(u);
 		if (isActive(u)) {
 			resetBehaviour(u);
 			startTrans(u, glide ? glideTime : 0);
@@ -602,8 +627,13 @@ function tick() {
 		const beh = behOf(u);
 		const m = mp(u, beh);
 		u.T += dt * tempo * m.speed;
+		// on its way home (R): aim for home until it gets there
+		if (u.homing && !u.trans && Date.now() >= u.homing.until) finishHoming(u);
 		let tg;
-		if (u.dragging) {
+		if (u.homing) {
+			tg = { x: u.home[0], y: u.home[1], kind: "move" };
+			u.ghost = u.home.slice();
+		} else if (u.dragging) {
 			tg = { x: u.dragPos[0], y: u.dragPos[1], kind: "cut" };
 		} else if (isActive(u)) {
 			// fixed slot by unit number, so toggling one unit never moves the others

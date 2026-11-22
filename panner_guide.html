@@ -32,8 +32,8 @@
 	<tr><td>Unit</td><td>One instrument (or one player's mics) that moves as a single sound. Up to 8 per set, one per nanoKONTROL2 strip.</td></tr>
 	<tr><td>Scene</td><td>One set's list of units, with their levels and settings: ensemble 1, ensemble 2, or switchemups 1-4.</td></tr>
 	<tr><td>Mode</td><td>A way of moving, picked with the number keys (drift, orbit, hop...).</td></tr>
-	<tr><td>Moving / frozen</td><td>A moving unit follows the mode. A frozen unit stays where it is. Switched with <b>M</b>.</td></tr>
-	<tr><td>Home</td><td>A unit's resting place in the room. <b>R</b> sends a unit there.</td></tr>
+	<tr><td>Movable / frozen</td><td>A movable unit follows the mode. A frozen unit stays where it is. Switched with <b>M</b>.</td></tr>
+	<tr><td>Home</td><td>A unit's resting place in the room, set in mode 1 (set home positions). <b>R</b> sends a unit there from any other mode.</td></tr>
 	<tr><td>Pickup</td><td>A knob or fader does nothing until you move it past its current value, so nothing jumps.</td></tr>
 	<tr><td>IN number</td><td>The console channel(s) a unit uses, shown in its box (<kbd>IN:5/6</kbd>). Use it when talking to FOH.</td></tr>
 	<tr><td>Glide / cut</td><td>Whether changes happen smoothly or instantly. <kbd>TAB</kbd> switches.</td></tr>
@@ -44,7 +44,8 @@
 <p><b>Golden rules</b></p>
 <p>Keep the Max window in front, or the number keys won't work.</p>
 <p>Every unit starts <b>frozen</b>. Nothing moves until you press its <b>M</b> button.</p>
-<p>Frozen and moving are kept <b>separately for each mode</b>. A unit you set moving in orbit is still frozen in drift until you press its M there too. When you switch modes, each unit goes back to however you left it in that mode.</p>
+<p>Frozen and movable are kept <b>separately for each mode</b>. A unit you made movable in orbit is still frozen in drift until you press its M there too. When you switch modes, each unit goes back to however you left it in that mode.</p>
+<p>The one exception is mode 1, <b>set home positions</b>: there every unit is always movable (all M buttons lit, and M does nothing), so each unit sits at its home and you can drag it to a new one.</p>
 <p>Everything saves itself. You never need to save the patch.</p>
 </div>
 
@@ -59,8 +60,10 @@
 <p>One channel strip per unit: strip 1 is unit 1, and so on.</p>
 <table>
 	<tr><td>Fader</td><td>Unit level. Top is full level (0 dB), the very bottom is off.</td></tr>
-	<tr><td>M</td><td>Start / stop the unit moving. <b>Lit = moving.</b></td></tr>
-	<tr><td>R</td><td>Send the unit home and freeze it there.</td></tr>
+	<tr><td>M</td><td>Make the unit movable or frozen. <b>Lit = movable.</b> In set home positions, all are lit and M does nothing.</td></tr>
+	<tr><td>R</td><td>Send the unit to its home (the one set in mode 1). R flashes while it travels.
+		<br><b>M off:</b> it stays home. <b>M on:</b> it goes straight back to what the mode is doing (in loop mode, back onto its loop).
+		<br>Does nothing in set home positions, where every unit is already home.</td></tr>
 	<tr><td>S (tap)</td><td>In assign mode only: select the unit (it flashes slowly). Tap again to deselect.</td></tr>
 	<tr><td>S (hold 2 s)</td><td>Delete the unit's loop. It flashes fast while you hold. Let go early to keep the loop.</td></tr>
 	<tr><td>Knobs</td><td>What they change depends on the transport button you last pressed (below).</td></tr>
@@ -75,13 +78,14 @@
 	<tr><td>CYCLE</td><td><b>global</b>: knob 1 overall speed, knob 2 glide time</td></tr>
 </table>
 <p>Range, speed and accel are remembered <b>separately for each mode</b>. Level, spread and width are the same in every mode.</p>
+<p>In set home positions, range, speed and accel do nothing, so their buttons are greyed out and their knobs show "n/a".</p>
 <div class="box">
 <p><b>A knob or fader does nothing?</b> That's pickup. Move it until it passes the value shown on the screen (the line or dot), then it takes over. This stops levels from jumping.</p>
 </div>
 
 <h2>Keyboard</h2>
 <table>
-	<tr><td><kbd>1</kbd> manual</td><td>Units sit at their homes. Drag a unit in the room view to move its home.</td></tr>
+	<tr><td><kbd>1</kbd> set home positions</td><td>Every unit sits at its home. Drag a unit in the room view to set a new home. That's where <b>R</b> sends it in every other mode.</td></tr>
 	<tr><td><kbd>2</kbd> drift</td><td>Slow wandering around the room.</td></tr>
 	<tr><td><kbd>3</kbd> orbit</td><td>Circling the middle of the room.</td></tr>
 	<tr><td><kbd>4</kbd> hop</td><td>Jumps between speakers at random.</td></tr>
@@ -107,7 +111,7 @@
 	<li>Click <b>DONE</b>.</li>
 	<li>Load <b>switchemups 2</b> and repeat, then 3 and 4.</li>
 </ol>
-<p>Then for each set: load it, bring the levels up with the faders, and press <b>1</b> (manual) to drag each unit to roughly where that player stands. All of this is remembered.</p>
+<p>Then for each set: load it, set the levels with the faders, and press <b>1</b> (set home positions) to drag each unit to roughly where that player stands. All of this is remembered.</p>
 <div class="box">
 <p><b>Start a set over from scratch:</b> press its <b>erase</b> button. It empties the line-up and forgets its levels and positions. Only switchemups sets can be erased.</p>
 <p><b>A problem with an input?</b> Tell FOH the IN number from the unit box.</p>
@@ -128,7 +132,7 @@
 <h2>If something goes wrong</h2>
 <table>
 	<tr><td>Something too loud</td><td>Pull that unit's fader down (it picks up first, see above).</td></tr>
-	<tr><td>Too much movement</td><td>Press <b>M</b> to freeze units, or <b>R</b> to send them home.</td></tr>
+	<tr><td>Too much movement</td><td>Press <b>M</b> to freeze units, then <b>R</b> to send them home.</td></tr>
 	<tr><td>Keys do nothing</td><td>Click the Max patch window so it's in front.</td></tr>
 	<tr><td>No sound at all from the quad</td><td>Check the monitoring switch is on Array Routing. If it is, tell FOH straight away: they bring up the backup PA.</td></tr>
 </table>

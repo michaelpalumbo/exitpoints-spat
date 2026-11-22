@@ -15,6 +15,8 @@
 //   btn <cc> <label>
 //   mode <name...>
 //   caption <text>      the small label above the mode line (default MODE)
+//   dim <cc> <0|1>      grey a button out (dark, label dimmed); it still sends
+//   groupdim <0|1>      grey the group box out
 //   group <text>        box the three transport buttons STOP, PLAY, REC and label
 //                       them (e.g. "orbit settings"); empty text removes the box
 //   <value> <cc>        an LED message (the same lists that go to [ctlout])
@@ -62,6 +64,9 @@ var label = {};
 var modeName = "";
 var captionText = "MODE";
 var groupText = "";
+var groupDim = 0;
+var dimmed = {};
+var C_OFFBTN = [0.17, 0.17, 0.19, 1];   // a greyed-out button
 var GROUP_CCS = [42, 41, 45]; // STOP, PLAY, REC: boxed together by "group"
 
 // layout, in design coordinates
@@ -147,6 +152,16 @@ function caption() {
 	var a = [];
 	for (var i = 0; i < arguments.length; i++) a.push(str(arguments[i]));
 	captionText = a.join(" ");
+	mgraphics.redraw();
+}
+
+function dim(cc, on) {
+	dimmed[cc] = on ? 1 : 0;
+	mgraphics.redraw();
+}
+
+function groupdim(on) {
+	groupDim = on ? 1 : 0;
 	mgraphics.redraw();
 }
 
@@ -282,11 +297,12 @@ function drawFader(o) {
 }
 
 function drawButton(o) {
-	var lit = led[o.cc];
-	rrect(o.x, o.y, o.w, o.h, 4, lit ? C_LIT : C_BTN);
+	var off = dimmed[o.cc];
+	var lit = led[o.cc] && !off;
+	rrect(o.x, o.y, o.w, o.h, 4, lit ? C_LIT : (off ? C_OFFBTN : C_BTN));
 	var lab = label[o.cc] || "";
 	var cx = o.x + o.w / 2;
-	var fg = lit ? C_BG : C_TEXT;
+	var fg = lit ? C_BG : (off ? C_DIM : C_TEXT);
 	if (o.big) {
 		// icon (or the button's name) on top, mode label in caps below
 		// a "|" in the label splits it over two lines, with a smaller icon to make room
@@ -316,11 +332,12 @@ function drawGroup() {
 		y0 = Math.min(y0, o.y); y1 = Math.max(y1, o.y + o.h);
 	}
 	if (x0 > x1) return;
-	setc(C_VALUE);
+	var gc = groupDim ? C_DIM : C_VALUE;
+	setc(gc);
 	mgraphics.set_line_width(1.5);
 	mgraphics.rectangle_rounded(x0 - 3, y0 - 4, x1 - x0 + 6, y1 - y0 + 22, 6, 6);
 	mgraphics.stroke();
-	ctext(groupText.toUpperCase(), (x0 + x1) / 2, y1 + 13, 9, C_VALUE);
+	ctext(groupText.toUpperCase(), (x0 + x1) / 2, y1 + 13, 9, gc);
 }
 
 var scaleS = 1, offX = 0, offY = 0;

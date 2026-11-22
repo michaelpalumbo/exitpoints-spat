@@ -3,9 +3,12 @@
 // nanoKONTROL2 for the panner. One channel per unit (units 1-8 of the scene).
 //
 //   fader     unit level, off (bottom, -70 dB) to 0 dB (top)
-//   M         toggle the unit frozen / moving in the current mode
-//             (LED lit = moving; everything starts frozen, so all M LEDs start dark)
-//   R         send the unit home and freeze it there
+//   M         toggle the unit frozen / movable in the current mode
+//             (LED lit = movable; everything starts frozen, except in "set home
+//             positions" where every unit is always movable and M does nothing)
+//   R         send the unit home; the LED flashes while it travels. M off: it
+//             stays home. M on: it goes back to the mode once it gets there.
+//             (Does nothing, and stays dark, in set home positions.)
 //   S         tap:  select the unit for assigning a behaviour (assign mode, key 0);
 //                   the LED flashes slowly while selected. Tap again to deselect.
 //             hold 2 s: clear the unit's loop (the LED flashes fast while held;
@@ -20,6 +23,9 @@
 //     PLAY (41)  speed     per unit, per behaviour: x1/4 to x6
 //     REC  (45)  accel     per unit, per behaviour: 1 = instant, lower = heavier
 //     CYCLE (46) global    knob 1 overall speed, knob 2 glide time
+//   In set home positions, range / speed / accel do nothing: their buttons are
+//   greyed out and dark, and those knobs show n/a. In assign mode the same goes
+//   for each unit assigned to set home.
 //
 // Knobs and faders pick up (same rule as nanoKontrolModes.js). Pickup resets on
 // page, mode and scene changes.
@@ -49,6 +55,7 @@ const CLEAR_MS = 2000;       // hold S this long to clear a loop
 const TAP_MS = 500;          // a shorter S press is a tap (select)
 const FAST_MS = 100;         // flash while holding S to clear
 const SLOW_MS = 300;         // flash while selected
+const HOMING_MS = 150;       // R flashes while the unit travels home
 
 const PAGES = [
 	{ cc: 43, name: "spread" },
@@ -61,10 +68,12 @@ const PAGES = [
 
 let page = 0;
 let mode = "manual";
+let modeLbl = "set home";
+const BEH_LABELS = { manual: "set_home" };
 const U = [];
 for (let i = 0; i < N; i++) {
 	U.push({ id: "", hasWidth: 0, active: 0, level: 0, spread: 0.01, width: 1,
-		speed: 1, accel: 1, range: 1, hasLoop: 0, beh: "manual", selected: 0 });
+		speed: 1, accel: 1, range: 1, hasLoop: 0, beh: "manual", selected: 0, homing: 0 });
 }
 let gSpeed = 1, gGlide = 2;
 
@@ -72,6 +81,7 @@ const fPos = new Array(N).fill(-1), fPicked = new Array(N).fill(0);
 const kPos = new Array(N).fill(-1), kPicked = new Array(N).fill(0);
 const sDown = new Array(N).fill(0);    // when each S went down (0 = up)
 const sDone = new Array(N).fill(0);    // this press already cleared the loop
+const rDown = new Array(N).fill(0);    // R held down
 const ledState = {};
 
 const flasher = new Task(flash, this);
@@ -93,7 +103,10 @@ function unit(n, id, hasWidth, active, db, spread, width, speed, accel, range, h
 	if (!u.id) u.selected = 0;
 }
 
-function behmode(m) { mode = String(m); }
+function behmode(m, label) {
+	mode = String(m);
+	modeLbl = label === undefined ? mode : String(label);
+}
 
 function globals(sp, gl) {
 	gSpeed = sp;
@@ -107,6 +120,13 @@ function active(n, on) {
 	u.active = on ? 1 : 0;
 	led(M0 + n - 1, u.active);
 	labels();
+}
+
+function homing(n, on) {
+	const u = U[n - 1];
+	if (!u) return;
+	u.homing = on ? 1 : 0;
+	flash();
 }
 
 function hasloop(n, on) {
@@ -124,7 +144,7 @@ function selected(n, on) {
 }
 
 function unitsdone() {
-	for (let i = 0; i < N; i++) { fPicked[i] = 0; kPicked[i] = 0; }
+	for (let i = 0; i < N; i++) { fPicked[i] = 0; kPicked[i] = 0; U[i].homing = 0; }
 	refresh();
 }
 
@@ -140,6 +160,10 @@ function list(v, cc) {
 
 	const pg = PAGES.findIndex(p => p.cc === cc);
 	if (pg >= 0) {
+		if (pageDisabled(pg)) {          // not used in set home positions: stay dark
+			led(cc, 0, true);
+			return;
+		}
 		if (on && pg !== page) {
 			page = pg;
 			for (let i = 0; i < N; i++) kPicked[i] = 0;
@@ -158,8 +182,13 @@ function list(v, cc) {
 
 	if (cc >= R0 && cc < R0 + N) {
 		const n = cc - R0;
+		if (unitIsHome(n)) {             // already home: nothing to do, stay dark
+			led(cc, 0, true);
+			return;
+		}
+		rDown[n] = on && U[n].id ? 1 : 0;
 		if (on && U[n].id) outlet(0, "home", n + 1);
-		led(cc, on && U[n].id ? 1 : 0, true);
+		flash();
 		return;
 	}
 
@@ -222,6 +251,14 @@ function flash() {
 			on = playingLoop(u);
 		}
 		led(S0 + n, on);
+
+		// R: flashes while the unit travels home, lit while held, otherwise dark
+		let r = 0;
+		if (u.id && !unitIsHome(n)) {
+			if (u.homing) r = Math.floor(now / HOMING_MS) % 2 === 0;
+			else r = rDown[n];
+		}
+		led(R0 + n, r);
 	}
 }
 
@@ -244,6 +281,29 @@ function hwKnob(k, pos) {
 		if (kPicked[k]) setKnob(k, pos);
 	}
 	display();
+}
+
+// the unit's behaviour is set home positions ("manual" inside)
+function unitIsHome(n) {
+	return !!U[n].id && U[n].beh === "manual";
+}
+
+// pages whose values belong to the behaviour (range, speed, accel)
+const BEH_PAGES = ["range", "speed", "accel"];
+function behPage(i) {
+	return BEH_PAGES.indexOf(PAGES[i].name) >= 0;
+}
+
+// in set home positions the behaviour pages do nothing
+function pageDisabled(i) {
+	return mode === "manual" && behPage(i);
+}
+
+// a knob with nothing to set on this page: the text to show, or ""
+function naText(k) {
+	if (PAGES[page].name === "width" && U[k].id && !U[k].hasWidth) return "n/a (mono)";
+	if (behPage(page) && unitIsHome(k)) return "n/a (set home)";
+	return "";
 }
 
 function playingLoop(u) {
@@ -273,6 +333,7 @@ function knobNorm(k) {
 	}
 	const u = U[k];
 	if (!u.id) return -1;
+	if (naText(k)) return -1;
 	if (name === "spread") return spreadNorm(u.spread);
 	if (name === "width") return u.hasWidth ? u.width / 5 : -1;
 	if (name === "range") return u.range;
@@ -323,7 +384,7 @@ function knobName(k) {
 	if (name === "global") return k === 0 ? "speed" : (k === 1 ? "glide" : "-");
 	if (knobNorm(k) < 0) return "-";
 	// in assign mode, say which behaviour this unit's range / speed / accel belong to
-	if (mode === "assign" && (name === "range" || name === "speed" || name === "accel")) return U[k].beh;
+	if (mode === "assign" && (name === "range" || name === "speed" || name === "accel")) return BEH_LABELS[U[k].beh] || U[k].beh;
 	return name;
 }
 
@@ -351,7 +412,7 @@ function led(cc, on, force) {
 }
 
 function pageLeds(force) {
-	PAGES.forEach((p, i) => led(p.cc, i === page, force));
+	PAGES.forEach((p, i) => led(p.cc, i === page && !pageDisabled(i), force));
 }
 
 function labels() {
@@ -362,13 +423,21 @@ function labels() {
 		if (has && u.selected) sl = "selected";
 		else if (has && playingLoop(u)) sl = "loop";
 		outlet(1, "btn", S0 + n, sl);
-		outlet(1, "btn", M0 + n, has ? (u.active ? "moving" : "frozen") : "");
-		outlet(1, "btn", R0 + n, has ? "home" : "");
+		outlet(1, "btn", M0 + n, has ? (u.active ? "movable" : "frozen") : "");
+		outlet(1, "btn", R0 + n, has && !unitIsHome(n) ? "home" : "");
 	}
 	for (const p of PAGES) outlet(1, "btn", p.cc, p.name);
 	for (const cc of [58, 59, 60, 61, 62]) outlet(1, "btn", cc, "");
 	// range / speed / accel belong to the behaviour: box them and say which
-	outlet(1, "group", mode === "assign" ? "each unit's behaviour" : mode + " settings");
+	PAGES.forEach((p, i) => outlet(1, "dim", p.cc, pageDisabled(i) ? 1 : 0));
+	for (let n = 0; n < N; n++) outlet(1, "dim", R0 + n, unitIsHome(n) ? 1 : 0);
+	if (mode === "manual") {
+		outlet(1, "group", "not used in set home");
+		outlet(1, "groupdim", 1);
+	} else {
+		outlet(1, "group", mode === "assign" ? "each unit's behaviour" : modeLbl + " settings");
+		outlet(1, "groupdim", 0);
+	}
 	outlet(1, "caption", "knobs");
 }
 
@@ -381,7 +450,8 @@ function display() {
 			const txt = u.level <= DB_LO + 0.05 ? "off" : (u.level > 0.05 ? "+" : "") + u.level.toFixed(1) + "dB";
 			outlet(1, "fader", n, posOfDb(u.level), fPos[n], (n + 1) + "_" + u.id, txt);
 		}
-		if (monoWidth(n)) outlet(1, "knob", n, -2, -1, "width", "n/a (mono)", -1, 0);   // -2: no ring
+		const na = naText(n);
+		if (na) outlet(1, "knob", n, -2, -1, PAGES[page].name, na, -1, 0);   // -2: no ring
 		else outlet(1, "knob", n, knobNorm(n), kPos[n], knobName(n), knobText(n), -1, 0);
 	}
 	outlet(1, "mode", PAGES[page].name);
