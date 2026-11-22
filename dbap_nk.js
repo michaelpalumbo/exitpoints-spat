@@ -2,8 +2,7 @@
 //
 // nanoKONTROL2 for the panner. One channel per unit (units 1-8 of the scene).
 //
-//   fader     unit level, -30 dB to +6 dB (unity about 5/6 up). The bottom is
-//             not off: there is no mute anywhere on the controller.
+//   fader     unit level, off (bottom, -70 dB) to 0 dB (top)
 //   M         toggle the unit frozen / moving in the current mode
 //             (LED lit = moving; everything starts frozen, so all M LEDs start dark)
 //   R         send the unit home and freeze it there
@@ -45,7 +44,7 @@ outlets = 3;
 const N = 8;
 const KNOB0 = 8, S0 = 32, M0 = 48, R0 = 64;
 const PICK = 0.03;
-const DB_LO = -30, DB_HI = 6;
+const DB_LO = -70, DB_HI = 0;   // the bottom of the fader is off
 const CLEAR_MS = 2000;       // hold S this long to clear a loop
 const TAP_MS = 500;          // a shorter S press is a tap (select)
 const FAST_MS = 100;         // flash while holding S to clear
@@ -379,7 +378,7 @@ function display() {
 		if (!u.id) {
 			outlet(1, "fader", n, -1, fPos[n], "-", "");
 		} else {
-			const txt = (u.level > 0.05 ? "+" : "") + u.level.toFixed(1) + "dB";
+			const txt = u.level <= DB_LO + 0.05 ? "off" : (u.level > 0.05 ? "+" : "") + u.level.toFixed(1) + "dB";
 			outlet(1, "fader", n, posOfDb(u.level), fPos[n], (n + 1) + "_" + u.id, txt);
 		}
 		if (monoWidth(n)) outlet(1, "knob", n, -2, -1, "width", "n/a (mono)", -1, 0);   // -2: no ring

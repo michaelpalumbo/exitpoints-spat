@@ -1,0 +1,207 @@
+// dbap_testsignals.genexpr
+// Test signals for the panner: 23 outputs, one per console channel, each a
+// synthetic stand-in for that channel's instrument. Everything runs on one
+// tempo, so the rhythmic parts stay together. Melodies pick random notes from
+// a pentatonic scale. Each part has its own envelope (plucks, stabs, swells),
+// rests on some steps, and sits out whole phrases at random.
+//
+// The drum kit (17-20) is a step sequencer in the style of a 909: tight
+// kick, snare and hats on a 16-step pattern with a few random extra hits.
+//
+// out 1-10  ensemble 1: headset, bowls, guitar, vox/harmonica, guitar FX L/R,
+//           guitar, tape, prepared piano L/R
+// out 11-23 ensemble 2: grand hi/lo, clarinet, bass clarinet, keys, vox FX,
+//           overheads L/R, kick, snare, tabla x2, vocal
+//
+// Params: tempo (bpm), gain. Every output is also scaled by 0.5.
+//
+// GenExpr needs function definitions first, so the Params come after them
+// and tempo is passed into each function as bpm.
+
+// a trigger every `beats` beats
+clock(bpm, beats) {
+	History ph(0);
+	p = ph + bpm / 60 / beats / samplerate;
+	t = p >= 1;
+	ph = t ? p - 1 : p;
+	return t;
+}
+
+// a trigger on step k of every n triggers of clock(bpm, beats)
+every(bpm, beats, n, k) {
+	History cnt(0);
+	t = clock(bpm, beats);
+	c = t ? (cnt + 1) % n : cnt;
+	cnt = c;
+	return t * (c == k);
+}
+
+// exponential decay, restarted by a trigger (drums)
+env(t, decay) {
+	History e(0);
+	c = exp(-1 / (max(decay, 0.001) * samplerate));
+	e = t ? 1 : e * c;
+	return e;
+}
+
+// attack (linear), hold, release (exponential, about -40 dB at the end)
+ar(t, atk, hold, rel) {
+	History age(1000);
+	a = t ? 0 : age + 1 / samplerate;
+	age = a;
+	up = atk > 0 ? clamp(a / atk, 0, 1) : 1;
+	down = a < atk + hold ? 1 : exp(-(a - atk - hold) / max(rel, 0.001) * 4.6);
+	return up * down;
+}
+
+// a random pentatonic note over two octaves, chosen when t fires
+note(t, base) {
+	d = floor(latch(noise() * 0.5 + 0.5, t) * 10);
+	semi = selector(d % 5 + 1, 0, 2, 4, 7, 9) + floor(d / 5) * 12;
+	return base + semi;
+}
+
+// a hit on t with probability prob
+chance(t, prob) {
+	return t * (latch(noise() * 0.5 + 0.5, t) < prob);
+}
+
+// 1 while the part is playing a phrase, 0 while it sits one out
+// (decided every 16 beats; plays about 70% of phrases)
+phrase(bpm) {
+	t = clock(bpm, 16);
+	rest = latch(noise() * 0.5 + 0.5 > 0.7, t);
+	return 1 - rest;
+}
+
+// plucked / sung line: filtered saw, bright 0-1
+melodic(bpm, beats, prob, base, bright, atk, hold, rel) {
+	History ph(0);
+	History lp(0);
+	hit = chance(clock(bpm, beats), prob) * phrase(bpm);
+	f = mtof(latch(note(hit, base), hit));
+	ph = wrap(ph + f / samplerate, 0, 1);
+	lp = mix(lp, ph * 2 - 1, bright * 0.3 + 0.02);
+	return lp * ar(hit, atk, hold, rel);
+}
+
+// struck metal / bowl / prepared piano: inharmonic partials
+bell(bpm, beats, prob, base, atk, hold, rel) {
+	hit = chance(clock(bpm, beats), prob) * phrase(bpm);
+	f = mtof(latch(note(hit, base), hit));
+	e2 = ar(hit, atk, hold, rel * 0.3);
+	s = cycle(f) * 0.6 + cycle(f * 2.76) * 0.3 * e2 + cycle(f * 5.4) * 0.15 * e2;
+	return s * ar(hit, atk, hold, rel);
+}
+
+// reed: odd harmonics (clarinet-ish), with a little vibrato
+reed(bpm, beats, prob, base, atk, hold, rel) {
+	History ph(0);
+	hit = chance(clock(bpm, beats), prob) * phrase(bpm);
+	f = mtof(latch(note(hit, base), hit)) * (1 + 0.004 * cycle(5));
+	ph = wrap(ph + f / samplerate, 0, 1);
+	sq = ph < 0.5 ? 1 : -1;
+	return (sq * 0.4 + cycle(f) * 0.6) * ar(hit, atk, hold, rel);
+}
+
+
+
+
+tabla(bpm, beats, prob, base) {
+	hit = chance(clock(bpm, beats), prob);
+	f = mtof(latch(note(hit, base), hit)) * (1 + 0.6 * env(hit, 0.04));
+	return cycle(f) * env(hit, 0.3);
+}
+
+// tape machine: a wobbly drone that swells in and out
+tape(bpm) {
+	hit = chance(clock(bpm, 8), 0.6);
+	f = 196 * (1 + 0.012 * cycle(0.37));
+	return (cycle(f) * 0.7 + noise() * 0.02) * ar(hit, 2, 1.5, 2.5);
+}
+
+Param tempo(96, min=20, max=240);
+Param gain(0.25, min=0, max=1);
+
+// drum kit state
+History sph(0);
+History step(0);
+History kph(0);
+History ke(0);
+History kpe(0);
+History se(0);
+History sn(0);
+History slp(0);
+History s1(0);
+History s2(0);
+History hc(0);
+History ho(0);
+History hl1(0);
+History hl2(0);
+
+lvl = gain * 0.5;
+
+// ---- drum kit: 16th-note steps ----
+sp = sph + tempo / 60 * 4 / samplerate;
+st = sp >= 1;
+sph = st ? sp - 1 : sp;
+stepn = st ? (step + 1) % 16 : step;
+step = stepn;
+
+// kick: fast pitch drop and a short body
+kt = st * ((stepn == 0) + (stepn == 8) + (stepn == 11) * (noise() > 0.4) > 0);
+ke = kt ? 1 : ke * exp(-1 / (0.28 * samplerate));
+kpe = kt ? 1 : kpe * exp(-1 / (0.03 * samplerate));
+kph = kt ? 0 : wrap(kph + (48 + 170 * kpe) / samplerate, 0, 1);
+kickout = sin(kph * twopi) * ke;
+
+// snare: two tones and a burst of bright noise
+skt = st * ((stepn == 4) + (stepn == 12) + (stepn == 15) * (noise() > 0.6) > 0);
+se = skt ? 1 : se * exp(-1 / (0.06 * samplerate));
+sn = skt ? 1 : sn * exp(-1 / (0.12 * samplerate));
+s1 = wrap(s1 + 185 / samplerate, 0, 1);
+s2 = wrap(s2 + 330 / samplerate, 0, 1);
+snz = noise();
+slp = mix(slp, snz, 0.25);
+snareout = (sin(s1 * twopi) * 0.5 + sin(s2 * twopi) * 0.3) * se + (snz - slp) * sn * 0.8;
+
+// hats: closed on the 8ths, open on step 14; each chokes the other
+cht = st * ((stepn % 2) == 0) * (stepn != 14);
+oht = st * (stepn == 14);
+hc = cht ? 1 : (oht ? 0 : hc * exp(-1 / (0.025 * samplerate)));
+ho = oht ? 1 : (cht ? 0 : ho * exp(-1 / (0.22 * samplerate)));
+hn = noise();
+hl1 = mix(hl1, hn, 0.3);
+h1 = hn - hl1;
+hl2 = mix(hl2, h1, 0.3);
+hh = h1 - hl2;
+ohL = hh * hc * 0.7;                      // overhead L: closed hats
+ohR = hh * ho * 0.6 + hh * hc * 0.3;      // overhead R: open hat, a little closed
+
+//               bpm    beats prob  note  [bright] atk    hold  rel
+// ---- ensemble 1 ----
+out1  = melodic(tempo, 0.5,  0.5,  57,   0.3,     0.02,  0.12, 0.08) * lvl;  // headset: short syllables
+out2  = bell(tempo,    4,    0.7,  72,            0.002, 0,    4)    * lvl;  // singing bowls: long rings
+out3  = melodic(tempo, 0.5,  0.5,  52,   0.8,     0.002, 0,    0.4)  * lvl;  // guitar: plucks
+out4  = reed(tempo,    2,    0.6,  64,            0.3,   0.4,  0.5)  * lvl;  // vox / harmonica: swells
+out5  = melodic(tempo, 0.25, 0.45, 59,   0.9,     0.001, 0.03, 0.08) * lvl;  // guitar FX L: staccato
+out6  = melodic(tempo, 0.25, 0.45, 59,   0.9,     0.001, 0.03, 0.08) * lvl;  // guitar FX R: staccato
+out7  = melodic(tempo, 4,    0.7,  47,   0.7,     1,     1,    2)    * lvl;  // guitar: slow swells
+out8  = tape(tempo)                                                  * lvl;  // tape machine
+out9  = bell(tempo,    0.5,  0.5,  48,            0.001, 0,    0.25) * lvl;  // prepared piano L: short hits
+out10 = bell(tempo,    0.5,  0.5,  48,            0.001, 0,    0.25) * lvl;  // prepared piano R: short hits
+
+// ---- ensemble 2 ----
+out11 = melodic(tempo, 2,    0.6,  67,   0.4,     0.002, 0,    1.5)  * lvl;  // grand hi
+out12 = melodic(tempo, 2,    0.6,  43,   0.4,     0.002, 0,    2.5)  * lvl;  // grand lo
+out13 = reed(tempo,    1,    0.6,  62,            0.08,  0.5,  0.3)  * lvl;  // clarinet: legato notes
+out14 = reed(tempo,    2,    0.6,  38,            0.1,   1.2,  0.5)  * lvl;  // bass clarinet: long notes
+out15 = bell(tempo,    0.5,  0.5,  60,            0.005, 0.2,  0.3)  * lvl;  // keyboard
+out16 = melodic(tempo, 4,    0.6,  67,   0.6,     0.5,   0.5,  1.5)  * lvl;  // vox FX: swells
+out17 = ohL                                                          * lvl;  // overhead L
+out18 = ohR                                                          * lvl;  // overhead R
+out19 = kickout                                                      * lvl;  // kick
+out20 = snareout                                                     * lvl;  // snare
+out21 = tabla(tempo,   0.5,  0.6,  62)                               * lvl;  // tabla
+out22 = tabla(tempo,   0.5,  0.6,  50)                               * lvl;  // tabla
+out23 = melodic(tempo, 2,    0.6,  60,   0.3,     0.15,  0.8,  0.6)  * lvl;  // vocal: sung notes

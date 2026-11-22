@@ -1,0 +1,144 @@
+// dbap_testsignals.genexpr
+// Test signals for the panner: 23 outputs, one per console channel, each a
+// synthetic stand-in for that channel's instrument. Everything runs on one
+// tempo, so the rhythmic parts stay together. Melodies pick random notes from
+// a pentatonic scale; every part has a chance to rest on each step.
+//
+// out 1-10  ensemble 1: headset, bowls, guitar, vox/harmonica, guitar FX L/R,
+//           guitar, tape, prepared piano L/R
+// out 11-23 ensemble 2: grand hi/lo, clarinet, bass clarinet, keys, vox FX,
+//           overheads L/R, kick, snare, tabla x2, vocal
+//
+// Params: tempo (bpm), gain
+//
+// GenExpr needs function definitions first, so the Params come after them
+// and tempo is passed into each function as bpm.
+
+// a trigger every `beats` beats
+clock(bpm, beats) {
+	History ph(0);
+	p = ph + bpm / 60 / beats / samplerate;
+	t = p >= 1;
+	ph = t ? p - 1 : p;
+	return t;
+}
+
+// a trigger on step k of every n triggers of clock(bpm, beats)
+every(bpm, beats, n, k) {
+	History cnt(0);
+	t = clock(bpm, beats);
+	c = t ? (cnt + 1) % n : cnt;
+	cnt = c;
+	return t * (c == k);
+}
+
+// exponential decay envelope, restarted by a trigger
+env(t, decay) {
+	History e(0);
+	c = exp(-1 / (max(decay, 0.001) * samplerate));
+	e = t ? 1 : e * c;
+	return e;
+}
+
+// a random pentatonic note over two octaves, chosen when t fires
+note(t, base) {
+	d = floor(latch(noise() * 0.5 + 0.5, t) * 10);
+	semi = selector(d % 5 + 1, 0, 2, 4, 7, 9) + floor(d / 5) * 12;
+	return base + semi;
+}
+
+// a hit on t with probability prob
+chance(t, prob) {
+	return t * (latch(noise() * 0.5 + 0.5, t) < prob);
+}
+
+// plucked / sung line: filtered saw, bright 0-1
+melodic(bpm, beats, prob, base, decay, bright) {
+	History ph(0);
+	History lp(0);
+	hit = chance(clock(bpm, beats), prob);
+	f = mtof(latch(note(hit, base), hit));
+	ph = wrap(ph + f / samplerate, 0, 1);
+	lp = mix(lp, ph * 2 - 1, bright * 0.3 + 0.02);
+	return lp * env(hit, decay);
+}
+
+// struck metal / bowl / prepared piano: inharmonic partials
+bell(bpm, beats, prob, base, decay) {
+	hit = chance(clock(bpm, beats), prob);
+	f = mtof(latch(note(hit, base), hit));
+	e2 = env(hit, decay * 0.3);
+	s = cycle(f) * 0.6 + cycle(f * 2.76) * 0.3 * e2 + cycle(f * 5.4) * 0.15 * e2;
+	return s * env(hit, decay);
+}
+
+// reed: odd harmonics (clarinet-ish), with a little vibrato
+reed(bpm, beats, prob, base, decay) {
+	History ph(0);
+	hit = chance(clock(bpm, beats), prob);
+	f = mtof(latch(note(hit, base), hit)) * (1 + 0.004 * cycle(5));
+	ph = wrap(ph + f / samplerate, 0, 1);
+	sq = ph < 0.5 ? 1 : -1;
+	s = sq * 0.4 + cycle(f) * 0.6;
+	return s * env(hit, decay);
+}
+
+kick(bpm, beats, prob) {
+	hit = chance(clock(bpm, beats), prob);
+	return cycle(45 + 110 * env(hit, 0.04)) * env(hit, 0.35);
+}
+
+snare(bpm, beats, prob) {
+	hit = chance(every(bpm, beats, 2, 1), prob);   // the off-beats
+	return noise() * env(hit, 0.15) * 0.6 + cycle(190) * env(hit, 0.07) * 0.5;
+}
+
+hat(bpm, beats, prob) {
+	History lp(0);
+	hit = chance(clock(bpm, beats), prob);
+	n = noise();
+	lp = mix(lp, n, 0.1);
+	return (n - lp) * env(hit, 0.05);
+}
+
+tabla(bpm, beats, prob, base) {
+	hit = chance(clock(bpm, beats), prob);
+	f = mtof(latch(note(hit, base), hit)) * (1 + 0.6 * env(hit, 0.04));
+	return cycle(f) * env(hit, 0.3);
+}
+
+// tape machine: a wobbly, swelling drone with hiss
+tape() {
+	f = 196 * (1 + 0.012 * cycle(0.37));
+	return cycle(f) * (0.35 + 0.35 * cycle(0.06)) + noise() * 0.02;
+}
+
+Param tempo(96, min=20, max=240);
+Param gain(0.25, min=0, max=1);
+
+// ---- ensemble 1 ----
+out1 = melodic(tempo, 1, 0.6, 57, 0.5, 0.3) * gain;        // headset
+out2 = bell(tempo, 4, 0.8, 72, 4) * gain;                  // singing bowls
+out3 = melodic(tempo, 0.5, 0.5, 52, 0.6, 0.8) * gain;      // guitar pickup
+out4 = reed(tempo, 1, 0.55, 64, 0.5) * gain;               // vox / harmonica
+out5 = melodic(tempo, 0.25, 0.45, 59, 0.3, 0.9) * gain;    // guitar FX L
+out6 = melodic(tempo, 0.25, 0.45, 59, 0.3, 0.9) * gain;    // guitar FX R
+out7 = melodic(tempo, 0.5, 0.5, 47, 0.8, 0.7) * gain;      // guitar
+out8 = tape() * gain;                               // tape machine
+out9 = bell(tempo, 0.5, 0.5, 48, 0.8) * gain;              // prepared piano L
+out10 = bell(tempo, 0.5, 0.5, 48, 0.8) * gain;             // prepared piano R
+
+// ---- ensemble 2 ----
+out11 = melodic(tempo, 1, 0.6, 67, 1.5, 0.4) * gain;       // grand hi
+out12 = melodic(tempo, 1, 0.6, 43, 1.5, 0.4) * gain;       // grand lo
+out13 = reed(tempo, 1, 0.6, 62, 0.8) * gain;               // clarinet
+out14 = reed(tempo, 2, 0.6, 38, 1) * gain;                 // bass clarinet
+out15 = bell(tempo, 0.5, 0.5, 60, 0.6) * gain;             // keyboard
+out16 = melodic(tempo, 1, 0.5, 67, 0.6, 0.6) * gain;       // vox FX
+out17 = hat(tempo, 0.25, 0.7) * gain;                      // overhead L
+out18 = hat(tempo, 0.25, 0.7) * gain;                      // overhead R
+out19 = kick(tempo, 1, 0.9) * gain;                        // kick
+out20 = snare(tempo, 1, 0.85) * gain;                      // snare
+out21 = tabla(tempo, 0.5, 0.6, 62) * gain;                 // tabla
+out22 = tabla(tempo, 0.5, 0.6, 50) * gain;                 // tabla
+out23 = melodic(tempo, 1, 0.55, 60, 1, 0.3) * gain;        // vocal

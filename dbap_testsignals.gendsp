@@ -1,0 +1,400 @@
+{
+    "patcher": {
+        "fileversion": 1,
+        "appversion": {
+            "major": 9,
+            "minor": 1,
+            "revision": 2,
+            "architecture": "x64",
+            "modernui": 1
+        },
+        "classnamespace": "dsp.gen",
+        "rect": [ 134.0, 159.0, 1400.0, 950.0 ],
+        "boxes": [
+            {
+                "box": {
+                    "code": "// dbap_testsignals.genexpr\n// Test signals for the panner: 23 outputs, one per console channel, each a\n// synthetic stand-in for that channel's instrument. Everything runs on one\n// tempo, so the rhythmic parts stay together. Melodies pick random notes from\n// a pentatonic scale. Each part has its own envelope (plucks, stabs, swells),\n// rests on some steps, and sits out whole phrases at random.\n//\n// The drum kit (17-20) is a step sequencer in the style of a 909: tight\n// kick, snare and hats on a 16-step pattern with a few random extra hits.\n//\n// out 1-10  ensemble 1: headset, bowls, guitar, vox/harmonica, guitar FX L/R,\n//           guitar, tape, prepared piano L/R\n// out 11-23 ensemble 2: grand hi/lo, clarinet, bass clarinet, keys, vox FX,\n//           overheads L/R, kick, snare, tabla x2, vocal\n//\n// Params: tempo (bpm), gain. Every output is also scaled by 0.5.\n//\n// GenExpr needs function definitions first, so the Params come after them\n// and tempo is passed into each function as bpm.\n\n// a trigger every `beats` beats\nclock(bpm, beats) {\n\tHistory ph(0);\n\tp = ph + bpm / 60 / beats / samplerate;\n\tt = p >= 1;\n\tph = t ? p - 1 : p;\n\treturn t;\n}\n\n// a trigger on step k of every n triggers of clock(bpm, beats)\nevery(bpm, beats, n, k) {\n\tHistory cnt(0);\n\tt = clock(bpm, beats);\n\tc = t ? (cnt + 1) % n : cnt;\n\tcnt = c;\n\treturn t * (c == k);\n}\n\n// exponential decay, restarted by a trigger (drums)\nenv(t, decay) {\n\tHistory e(0);\n\tc = exp(-1 / (max(decay, 0.001) * samplerate));\n\te = t ? 1 : e * c;\n\treturn e;\n}\n\n// attack (linear), hold, release (exponential, about -40 dB at the end)\nar(t, atk, hold, rel) {\n\tHistory age(1000);\n\ta = t ? 0 : age + 1 / samplerate;\n\tage = a;\n\tup = atk > 0 ? clamp(a / atk, 0, 1) : 1;\n\tdown = a < atk + hold ? 1 : exp(-(a - atk - hold) / max(rel, 0.001) * 4.6);\n\treturn up * down;\n}\n\n// a random pentatonic note over two octaves, chosen when t fires\nnote(t, base) {\n\td = floor(latch(noise() * 0.5 + 0.5, t) * 10);\n\tsemi = selector(d % 5 + 1, 0, 2, 4, 7, 9) + floor(d / 5) * 12;\n\treturn base + semi;\n}\n\n// a hit on t with probability prob\nchance(t, prob) {\n\treturn t * (latch(noise() * 0.5 + 0.5, t) < prob);\n}\n\n// like chance(), but only while gate is 1, and never more than 2 s without a\n// hit: after 2 s of silence the next step always plays (so no part goes quiet\n// for longer than about 2-2.5 s)\npick(t, prob, gate) {\n\tHistory since(0);\n\th = t * ((latch(noise() * 0.5 + 0.5, t) < prob) * gate + (since >= 2) > 0);\n\tsince = h ? 0 : since + 1 / samplerate;\n\treturn h;\n}\n\n// 1 while the part is playing a phrase, 0 while it sits one out\n// (decided every 16 beats; plays about 70% of phrases)\nphrase(bpm) {\n\tt = clock(bpm, 16);\n\trest = latch(noise() * 0.5 + 0.5 > 0.7, t);\n\treturn 1 - rest;\n}\n\n// plucked / sung line: filtered saw, bright 0-1\nmelodic(bpm, beats, prob, base, bright, atk, hold, rel) {\n\tHistory ph(0);\n\tHistory lp(0);\n\thit = pick(clock(bpm, beats), prob, phrase(bpm));\n\tf = mtof(latch(note(hit, base), hit));\n\tph = wrap(ph + f / samplerate, 0, 1);\n\tlp = mix(lp, ph * 2 - 1, bright * 0.3 + 0.02);\n\treturn lp * ar(hit, atk, hold, rel);\n}\n\n// struck metal / bowl / prepared piano: inharmonic partials\nbell(bpm, beats, prob, base, atk, hold, rel) {\n\thit = pick(clock(bpm, beats), prob, phrase(bpm));\n\tf = mtof(latch(note(hit, base), hit));\n\te2 = ar(hit, atk, hold, rel * 0.3);\n\ts = cycle(f) * 0.6 + cycle(f * 2.76) * 0.3 * e2 + cycle(f * 5.4) * 0.15 * e2;\n\treturn s * ar(hit, atk, hold, rel);\n}\n\n// reed: odd harmonics (clarinet-ish), with a little vibrato\nreed(bpm, beats, prob, base, atk, hold, rel) {\n\tHistory ph(0);\n\thit = pick(clock(bpm, beats), prob, phrase(bpm));\n\tf = mtof(latch(note(hit, base), hit)) * (1 + 0.004 * cycle(5));\n\tph = wrap(ph + f / samplerate, 0, 1);\n\tsq = ph < 0.5 ? 1 : -1;\n\treturn (sq * 0.4 + cycle(f) * 0.6) * ar(hit, atk, hold, rel);\n}\n\n\n\n\ntabla(bpm, beats, prob, base) {\n\thit = pick(clock(bpm, beats), prob, 1);\n\tf = mtof(latch(note(hit, base), hit)) * (1 + 0.6 * env(hit, 0.04));\n\treturn cycle(f) * env(hit, 0.3);\n}\n\n// tape machine: a wobbly drone that swells in and out\ntape(bpm) {\n\thit = pick(clock(bpm, 4), 0.6, 1);\n\tf = 196 * (1 + 0.012 * cycle(0.37));\n\treturn (cycle(f) * 0.7 + noise() * 0.02) * ar(hit, 2, 1.5, 2.5);\n}\n\nParam tempo(96, min=20, max=240);\nParam gain(0.25, min=0, max=1);\n\n// drum kit state\nHistory sph(0);\nHistory step(0);\nHistory kph(0);\nHistory ke(0);\nHistory kpe(0);\nHistory se(0);\nHistory sn(0);\nHistory slp(0);\nHistory s1(0);\nHistory s2(0);\nHistory hc(0);\nHistory ho(0);\nHistory hl1(0);\nHistory hl2(0);\n\nlvl = gain * 0.5;\n\n// ---- drum kit: 16th-note steps ----\nsp = sph + tempo / 60 * 4 / samplerate;\nst = sp >= 1;\nsph = st ? sp - 1 : sp;\nstepn = st ? (step + 1) % 16 : step;\nstep = stepn;\n\n// kick: fast pitch drop and a short body\nkt = st * ((stepn == 0) + (stepn == 8) + (stepn == 11) * (noise() > 0.4) > 0);\nke = kt ? 1 : ke * exp(-1 / (0.28 * samplerate));\nkpe = kt ? 1 : kpe * exp(-1 / (0.03 * samplerate));\nkph = kt ? 0 : wrap(kph + (48 + 170 * kpe) / samplerate, 0, 1);\nkickout = sin(kph * twopi) * ke;\n\n// snare: two tones and a burst of bright noise\nskt = st * ((stepn == 4) + (stepn == 12) + (stepn == 15) * (noise() > 0.6) > 0);\nse = skt ? 1 : se * exp(-1 / (0.06 * samplerate));\nsn = skt ? 1 : sn * exp(-1 / (0.12 * samplerate));\ns1 = wrap(s1 + 185 / samplerate, 0, 1);\ns2 = wrap(s2 + 330 / samplerate, 0, 1);\nsnz = noise();\nslp = mix(slp, snz, 0.25);\nsnareout = (sin(s1 * twopi) * 0.5 + sin(s2 * twopi) * 0.3) * se + (snz - slp) * sn * 0.8;\n\n// hats: closed on the 8ths, open on step 14; each chokes the other\ncht = st * ((stepn % 2) == 0) * (stepn != 14);\noht = st * (stepn == 14);\nhc = cht ? 1 : (oht ? 0 : hc * exp(-1 / (0.025 * samplerate)));\nho = oht ? 1 : (cht ? 0 : ho * exp(-1 / (0.22 * samplerate)));\nhn = noise();\nhl1 = mix(hl1, hn, 0.3);\nh1 = hn - hl1;\nhl2 = mix(hl2, h1, 0.3);\nhh = h1 - hl2;\nohL = hh * hc * 0.7;                      // overhead L: closed hats\nohR = hh * ho * 0.6 + hh * hc * 0.3;      // overhead R: open hat, a little closed\n\n//               bpm    beats prob  note  [bright] atk    hold  rel\n// ---- ensemble 1 ----\nout1  = melodic(tempo, 0.5,  0.5,  57,   0.3,     0.02,  0.12, 0.08) * lvl;  // headset: short syllables\nout2  = bell(tempo,    4,    0.7,  72,            0.002, 0,    4)    * lvl;  // singing bowls: long rings\nout3  = melodic(tempo, 0.5,  0.5,  52,   0.8,     0.002, 0,    0.4)  * lvl;  // guitar: plucks\nout4  = reed(tempo,    2,    0.6,  64,            0.3,   0.4,  0.5)  * lvl;  // vox / harmonica: swells\nout5  = melodic(tempo, 0.25, 0.45, 59,   0.9,     0.001, 0.03, 0.08) * lvl;  // guitar FX L: staccato\nout6  = melodic(tempo, 0.25, 0.45, 59,   0.9,     0.001, 0.03, 0.08) * lvl;  // guitar FX R: staccato\nout7  = melodic(tempo, 4,    0.7,  47,   0.7,     1,     1,    2)    * lvl;  // guitar: slow swells\nout8  = tape(tempo)                                                  * lvl;  // tape machine\nout9  = bell(tempo,    0.5,  0.5,  48,            0.001, 0,    0.25) * lvl;  // prepared piano L: short hits\nout10 = bell(tempo,    0.5,  0.5,  48,            0.001, 0,    0.25) * lvl;  // prepared piano R: short hits\n\n// ---- ensemble 2 ----\nout11 = melodic(tempo, 2,    0.6,  67,   0.4,     0.002, 0,    1.5)  * lvl;  // grand hi\nout12 = melodic(tempo, 2,    0.6,  43,   0.4,     0.002, 0,    2.5)  * lvl;  // grand lo\nout13 = reed(tempo,    1,    0.6,  62,            0.08,  0.5,  0.3)  * lvl;  // clarinet: legato notes\nout14 = reed(tempo,    2,    0.6,  38,            0.1,   1.2,  0.5)  * lvl;  // bass clarinet: long notes\nout15 = bell(tempo,    0.5,  0.5,  60,            0.005, 0.2,  0.3)  * lvl;  // keyboard\nout16 = melodic(tempo, 4,    0.6,  67,   0.6,     0.5,   0.5,  1.5)  * lvl;  // vox FX: swells\nout17 = ohL                                                          * lvl;  // overhead L\nout18 = ohR                                                          * lvl;  // overhead R\nout19 = kickout                                                      * lvl;  // kick\nout20 = snareout                                                     * lvl;  // snare\nout21 = tabla(tempo,   0.5,  0.6,  62)                               * lvl;  // tabla\nout22 = tabla(tempo,   0.5,  0.6,  50)                               * lvl;  // tabla\nout23 = melodic(tempo, 2,    0.6,  60,   0.3,     0.15,  0.8,  0.6)  * lvl;  // vocal: sung notes\n",
+                    "fontface": 0,
+                    "fontname": "<Monospaced>",
+                    "fontsize": 12.0,
+                    "id": "obj-code",
+                    "maxclass": "codebox",
+                    "numinlets": 1,
+                    "numoutlets": 23,
+                    "outlettype": [ "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "" ],
+                    "patching_rect": [ 40.0, 40.0, 1300.0, 800.0 ]
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-out1",
+                    "maxclass": "newobj",
+                    "numinlets": 1,
+                    "numoutlets": 0,
+                    "patching_rect": [ 40.0, 880.0, 50.0, 22.0 ],
+                    "text": "out 1"
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-out2",
+                    "maxclass": "newobj",
+                    "numinlets": 1,
+                    "numoutlets": 0,
+                    "patching_rect": [ 96.52173913043478, 880.0, 50.0, 22.0 ],
+                    "text": "out 2"
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-out3",
+                    "maxclass": "newobj",
+                    "numinlets": 1,
+                    "numoutlets": 0,
+                    "patching_rect": [ 153.04347826086956, 880.0, 50.0, 22.0 ],
+                    "text": "out 3"
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-out4",
+                    "maxclass": "newobj",
+                    "numinlets": 1,
+                    "numoutlets": 0,
+                    "patching_rect": [ 209.56521739130434, 880.0, 50.0, 22.0 ],
+                    "text": "out 4"
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-out5",
+                    "maxclass": "newobj",
+                    "numinlets": 1,
+                    "numoutlets": 0,
+                    "patching_rect": [ 266.0869565217391, 880.0, 50.0, 22.0 ],
+                    "text": "out 5"
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-out6",
+                    "maxclass": "newobj",
+                    "numinlets": 1,
+                    "numoutlets": 0,
+                    "patching_rect": [ 322.6086956521739, 880.0, 50.0, 22.0 ],
+                    "text": "out 6"
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-out7",
+                    "maxclass": "newobj",
+                    "numinlets": 1,
+                    "numoutlets": 0,
+                    "patching_rect": [ 379.1304347826087, 880.0, 50.0, 22.0 ],
+                    "text": "out 7"
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-out8",
+                    "maxclass": "newobj",
+                    "numinlets": 1,
+                    "numoutlets": 0,
+                    "patching_rect": [ 435.6521739130435, 880.0, 50.0, 22.0 ],
+                    "text": "out 8"
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-out9",
+                    "maxclass": "newobj",
+                    "numinlets": 1,
+                    "numoutlets": 0,
+                    "patching_rect": [ 492.17391304347825, 880.0, 50.0, 22.0 ],
+                    "text": "out 9"
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-out10",
+                    "maxclass": "newobj",
+                    "numinlets": 1,
+                    "numoutlets": 0,
+                    "patching_rect": [ 548.695652173913, 880.0, 50.0, 22.0 ],
+                    "text": "out 10"
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-out11",
+                    "maxclass": "newobj",
+                    "numinlets": 1,
+                    "numoutlets": 0,
+                    "patching_rect": [ 605.2173913043478, 880.0, 50.0, 22.0 ],
+                    "text": "out 11"
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-out12",
+                    "maxclass": "newobj",
+                    "numinlets": 1,
+                    "numoutlets": 0,
+                    "patching_rect": [ 661.7391304347826, 880.0, 50.0, 22.0 ],
+                    "text": "out 12"
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-out13",
+                    "maxclass": "newobj",
+                    "numinlets": 1,
+                    "numoutlets": 0,
+                    "patching_rect": [ 718.2608695652174, 880.0, 50.0, 22.0 ],
+                    "text": "out 13"
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-out14",
+                    "maxclass": "newobj",
+                    "numinlets": 1,
+                    "numoutlets": 0,
+                    "patching_rect": [ 774.7826086956521, 880.0, 50.0, 22.0 ],
+                    "text": "out 14"
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-out15",
+                    "maxclass": "newobj",
+                    "numinlets": 1,
+                    "numoutlets": 0,
+                    "patching_rect": [ 831.304347826087, 880.0, 50.0, 22.0 ],
+                    "text": "out 15"
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-out16",
+                    "maxclass": "newobj",
+                    "numinlets": 1,
+                    "numoutlets": 0,
+                    "patching_rect": [ 887.8260869565217, 880.0, 50.0, 22.0 ],
+                    "text": "out 16"
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-out17",
+                    "maxclass": "newobj",
+                    "numinlets": 1,
+                    "numoutlets": 0,
+                    "patching_rect": [ 944.3478260869565, 880.0, 50.0, 22.0 ],
+                    "text": "out 17"
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-out18",
+                    "maxclass": "newobj",
+                    "numinlets": 1,
+                    "numoutlets": 0,
+                    "patching_rect": [ 1000.8695652173913, 880.0, 50.0, 22.0 ],
+                    "text": "out 18"
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-out19",
+                    "maxclass": "newobj",
+                    "numinlets": 1,
+                    "numoutlets": 0,
+                    "patching_rect": [ 1057.391304347826, 880.0, 50.0, 22.0 ],
+                    "text": "out 19"
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-out20",
+                    "maxclass": "newobj",
+                    "numinlets": 1,
+                    "numoutlets": 0,
+                    "patching_rect": [ 1113.9130434782608, 880.0, 50.0, 22.0 ],
+                    "text": "out 20"
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-out21",
+                    "maxclass": "newobj",
+                    "numinlets": 1,
+                    "numoutlets": 0,
+                    "patching_rect": [ 1170.4347826086955, 880.0, 50.0, 22.0 ],
+                    "text": "out 21"
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-out22",
+                    "maxclass": "newobj",
+                    "numinlets": 1,
+                    "numoutlets": 0,
+                    "patching_rect": [ 1226.9565217391305, 880.0, 50.0, 22.0 ],
+                    "text": "out 22"
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-out23",
+                    "maxclass": "newobj",
+                    "numinlets": 1,
+                    "numoutlets": 0,
+                    "patching_rect": [ 1283.4782608695652, 880.0, 50.0, 22.0 ],
+                    "text": "out 23"
+                }
+            }
+        ],
+        "lines": [
+            {
+                "patchline": {
+                    "destination": [ "obj-out1", 0 ],
+                    "source": [ "obj-code", 0 ]
+                }
+            },
+            {
+                "patchline": {
+                    "destination": [ "obj-out10", 0 ],
+                    "source": [ "obj-code", 9 ]
+                }
+            },
+            {
+                "patchline": {
+                    "destination": [ "obj-out11", 0 ],
+                    "source": [ "obj-code", 10 ]
+                }
+            },
+            {
+                "patchline": {
+                    "destination": [ "obj-out12", 0 ],
+                    "source": [ "obj-code", 11 ]
+                }
+            },
+            {
+                "patchline": {
+                    "destination": [ "obj-out13", 0 ],
+                    "source": [ "obj-code", 12 ]
+                }
+            },
+            {
+                "patchline": {
+                    "destination": [ "obj-out14", 0 ],
+                    "source": [ "obj-code", 13 ]
+                }
+            },
+            {
+                "patchline": {
+                    "destination": [ "obj-out15", 0 ],
+                    "source": [ "obj-code", 14 ]
+                }
+            },
+            {
+                "patchline": {
+                    "destination": [ "obj-out16", 0 ],
+                    "source": [ "obj-code", 15 ]
+                }
+            },
+            {
+                "patchline": {
+                    "destination": [ "obj-out17", 0 ],
+                    "source": [ "obj-code", 16 ]
+                }
+            },
+            {
+                "patchline": {
+                    "destination": [ "obj-out18", 0 ],
+                    "source": [ "obj-code", 17 ]
+                }
+            },
+            {
+                "patchline": {
+                    "destination": [ "obj-out19", 0 ],
+                    "source": [ "obj-code", 18 ]
+                }
+            },
+            {
+                "patchline": {
+                    "destination": [ "obj-out2", 0 ],
+                    "source": [ "obj-code", 1 ]
+                }
+            },
+            {
+                "patchline": {
+                    "destination": [ "obj-out20", 0 ],
+                    "source": [ "obj-code", 19 ]
+                }
+            },
+            {
+                "patchline": {
+                    "destination": [ "obj-out21", 0 ],
+                    "source": [ "obj-code", 20 ]
+                }
+            },
+            {
+                "patchline": {
+                    "destination": [ "obj-out22", 0 ],
+                    "source": [ "obj-code", 21 ]
+                }
+            },
+            {
+                "patchline": {
+                    "destination": [ "obj-out23", 0 ],
+                    "source": [ "obj-code", 22 ]
+                }
+            },
+            {
+                "patchline": {
+                    "destination": [ "obj-out3", 0 ],
+                    "source": [ "obj-code", 2 ]
+                }
+            },
+            {
+                "patchline": {
+                    "destination": [ "obj-out4", 0 ],
+                    "source": [ "obj-code", 3 ]
+                }
+            },
+            {
+                "patchline": {
+                    "destination": [ "obj-out5", 0 ],
+                    "source": [ "obj-code", 4 ]
+                }
+            },
+            {
+                "patchline": {
+                    "destination": [ "obj-out6", 0 ],
+                    "source": [ "obj-code", 5 ]
+                }
+            },
+            {
+                "patchline": {
+                    "destination": [ "obj-out7", 0 ],
+                    "source": [ "obj-code", 6 ]
+                }
+            },
+            {
+                "patchline": {
+                    "destination": [ "obj-out8", 0 ],
+                    "source": [ "obj-code", 7 ]
+                }
+            },
+            {
+                "patchline": {
+                    "destination": [ "obj-out9", 0 ],
+                    "source": [ "obj-code", 8 ]
+                }
+            }
+        ]
+    }
+}

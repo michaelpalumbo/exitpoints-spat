@@ -15,13 +15,15 @@
 // press 1-9 to give the selected units that behaviour. 0 clears the selection.
 //
 // Every unit starts frozen in every mode (patch load and scene change). Each
-// mode keeps its own frozen / active state per unit.
+// mode keeps its own frozen / active state per unit. The exception is mode 1,
+// "set home positions" (manual inside): there every unit is always movable,
+// so it sits at its home and can be dragged to a new one; M does nothing.
 //
 // From dbap_nk.js (or the room view):
 //   toggle <n>                 unit n active / frozen in the current mode
 //   home <n>                   send unit n home and freeze it there
 //   select <n>                 toggle unit n's selection (assign mode only)
-//   unitlevel <n> <dB>
+//   unitlevel <n> <dB>         -70 or lower = off
 //   unitparam <n> <name> <v>   spread, width: per unit (all modes)
 //                              range, speed, accel: per unit per behaviour
 //   speed <mult>, glidetime <seconds>      global
@@ -67,6 +69,11 @@ const NUNITS = 8;
 const MODE_KEYS = "1234567890";
 const MODE_NAMES = ["manual", "drift", "orbit", "hop", "pulse", "swarm", "sway", "perimeter", "loop", "assign"];
 const BEHAVIOURS = MODE_NAMES.slice(0, 9);
+// names shown on screen ("manual" is kept inside so saved settings still match)
+const MODE_LABELS = { manual: "set home" };
+const MODE_TITLES = { manual: "set home positions" };
+function modeLabel(m) { return MODE_LABELS[m] || m; }
+function modeTitle(m) { return MODE_TITLES[m] || modeLabel(m); }
 
 const UNIT_DEFAULTS = { level: 0, spread: 0.01, width: 1 };
 const MODE_DEFAULTS = { range: 1, speed: 1, accel: 1 };
@@ -163,6 +170,10 @@ function glidetime(s) {
 function toggle(n) {
 	const u = unitOf(n);
 	if (!u) return;
+	if (behOf(u) === "manual") {      // always movable here: M does nothing
+		outlet(1, "active", n, 1);
+		return;
+	}
 	setActive(u, !isActive(u));
 	if (isActive(u)) {
 		resetBehaviour(u);
@@ -431,7 +442,8 @@ function behOf(u) {
 	return mode === "assign" ? (u.p.assign || "manual") : mode;
 }
 
-function isActive(u) { return !!u.activeBy[mode]; }
+// in "set home positions" (manual) every unit is always movable
+function isActive(u) { return behOf(u) === "manual" || !!u.activeBy[mode]; }
 function setActive(u, on) { u.activeBy[mode] = !!on; }
 
 // ---- units ----
@@ -516,7 +528,8 @@ function buildUnits() {
 }
 
 function applyLevel(u) {
-	const lin = Math.pow(10, u.p.level / 20);
+	// -70 dB (the bottom of the nanoKONTROL2 fader) and below is off
+	const lin = u.p.level <= -70 ? 0 : Math.pow(10, u.p.level / 20);
 	for (const m of u.members) outlet(0, "level", m, lin);
 }
 
@@ -839,7 +852,7 @@ function sendUnits() {
 		outlet(1, "unit", n, String(u.label).replace(/ /g, "_"), u.hasWidth ? 1 : 0, isActive(u) ? 1 : 0,
 			u.p.level, u.p.spread, u.p.width, m.speed, m.accel, m.range, u.p.loop ? 1 : 0, behOf(u));
 	}
-	outlet(1, "behmode", mode);
+	outlet(1, "behmode", mode, modeLabel(mode).replace(/ /g, "_"));
 	outlet(1, "unitsdone");
 }
 
@@ -847,7 +860,8 @@ function publish() {
 	behDict.parse(JSON.stringify({
 		mode,
 		modeKey: MODE_KEYS[MODE_NAMES.indexOf(mode)],
-		modes: MODE_NAMES.map((m, i) => ({ key: MODE_KEYS[i], name: m })),
+		modes: MODE_NAMES.map((m, i) => ({ key: MODE_KEYS[i], name: m, label: modeLabel(m) })),
+		modeTitle: modeTitle(mode),
 		glide,
 		glideTime,
 		speed: tempo,
@@ -857,7 +871,7 @@ function publish() {
 				n: u.n, id: u.id, kind: u.kind, members: u.members,
 				active: isActive(u) ? 1 : 0,
 				beh,
-				assign: u.p.assign || "manual",
+				assign: modeLabel(u.p.assign || "manual"),
 				selected: selected.has(u.n) ? 1 : 0,
 				spread: u.p.spread,
 				range: mp(u, beh).range,

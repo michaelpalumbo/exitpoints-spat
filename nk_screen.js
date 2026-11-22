@@ -10,8 +10,8 @@
 //        red tick = a remembered value (region knobs 4 and 5): faint normally,
 //        bright when the other knob has pushed the edge away from it.
 //   fader <n> <level 0-1> <hardware position 0-1, -1 unseen> <name> <value text>
-//   Faders: the thin line is the layer's level; the bar is where the hardware
-//   fader is. The hardware fader takes over once the bar reaches the line.
+//   Faders: the blue bar is the level; the yellow line is where the hardware
+//   fader is. The hardware fader takes over once the line reaches the bar.
 //   btn <cc> <label>
 //   mode <name...>
 //   caption <text>      the small label above the mode line (default MODE)
@@ -262,17 +262,19 @@ function drawKnob(o) {
 function drawFader(o) {
 	var n = o.n;
 	rrect(o.x, o.y, o.w, o.h, 3, C_TRACK);
-	// blue bar: where the hardware fader physically is (once it has moved)
-	if (faderPos[n] >= 0) {
-		var ph = o.h * Math.max(0, Math.min(1, faderPos[n]));
-		rrect(o.x + 3, o.y + o.h - ph, o.w - 6, ph, 2, C_VALUE);
-	}
-	// level line: same colour and width as the bar, so the two merge once picked up
-	// (a value below 0 means the fader is unused in this mode: no line)
+	// blue bar: the level (same colour as a knob's value arc)
+	// (a value below 0 means the fader is unused in this mode: no bar)
 	if (faderVal[n] >= 0) {
-		var ly = o.y + o.h - o.h * Math.min(1, faderVal[n]);
-		setc(C_VALUE);
-		mgraphics.rectangle(o.x + 3, ly, o.w - 6, 4);
+		var vh = o.h * Math.max(0, Math.min(1, faderVal[n]));
+		rrect(o.x + 3, o.y + o.h - vh, o.w - 6, vh, 2, C_VALUE);
+	}
+	// yellow line: where the hardware fader physically is (same colour as a
+	// knob's hardware tick), once it has moved. It reaches the top of the blue
+	// bar when the fader picks up.
+	if (faderPos[n] >= 0) {
+		var py = o.y + o.h - o.h * Math.max(0, Math.min(1, faderPos[n]));
+		setc(C_HW);
+		mgraphics.rectangle(o.x, py - 1.5, o.w, 3);
 		mgraphics.fill();
 	}
 	ctext(faderText[n], o.x + o.w / 2, o.y + o.h + 14, 10, C_VALUE);

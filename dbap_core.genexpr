@@ -6,7 +6,14 @@
 //
 // Point and speaker data come from two buffer~s, written by dbap_control.js:
 //   buffer~ dbap_pts 1 5   (24 frames x 5 ch: x, y, level, slew ms, blur m)
-//   buffer~ dbap_spk 1 2   (6 frames x 2 ch: x, y)
+//   buffer~ dbap_spk 1 4   (frames 0-5: x, y, delay ms, gain per speaker;
+//                           frame 6, channel 1: how many speakers, 1-6)
+//
+// Outputs follow the room file's speaker order (quad: 1 FL, 2 FR, 3 BL, 4 BR).
+// Each has a delay and gain trim for calibration (from dbap_control.js).
+// With 4 speakers or fewer, outputs 5 and 6 carry the headphone monitor: every
+// point at its level, before panning, so the balance doesn't depend on where
+// the units are or where you sit.
 //
 // Coordinates in metres, origin = centre of the rectangle,
 // +y toward the stage, +x to the right when facing the stage.
@@ -26,11 +33,21 @@ Data cf(24);        // smoothing coefficient per point
 Data act(24);       // 1 = point needs processing
 Data vt(6);         // scratch
 Data acc(6);        // speaker accumulators
+Data mlv(24);       // smoothed point levels for the monitor
 
 Param rolloff(6, min=0.1);   // dB per doubling of distance
 Param block(32, min=1, max=4096);   // samples between gain recalculations
+Param mongain(0.5, min=0, max=2);    // headphone monitor level
 
 History ctr(0);
+
+// calibration delays, up to 9600 samples (200 ms at 48k)
+Delay dl1(9600);
+Delay dl2(9600);
+Delay dl3(9600);
+Delay dl4(9600);
+Delay dl5(9600);
+Delay dl6(9600);
 
 poke(ins, in1, 0);
 poke(ins, in2, 1);
@@ -57,6 +74,10 @@ poke(ins, in22, 21);
 poke(ins, in23, 22);
 poke(ins, in24, 23);
 
+// speaker count (frame 6 of dbap_spk); 0 or missing = 6
+nsr = peek(spk, 6, 0);
+ns = nsr >= 1 ? min(floor(nsr), 6) : 6;
+
 upd = ctr <= 0;
 
 if (upd) {
@@ -74,17 +95,18 @@ if (upd) {
 			bl = max(peek(pts, i, 4), 0.001);
 			b2 = bl * bl;
 			tot = 0;
-			for (s = 0; s < 6; s = s + 1) {
+			for (s = 0; s < ns; s = s + 1) {
 				dx = px - peek(spk, s, 0);
 				dy = py - peek(spk, s, 1);
-				v = pow(dx * dx + dy * dy + b2, ha);
+				// a speaker with a gain trim of 0 is unused (dbap_control.js marks them so)
+				v = peek(spk, s, 3) > 0 ? pow(dx * dx + dy * dy + b2, ha) : 0;
 				poke(vt, v, s);
 				tot = tot + v * v;
 			}
 			// constant power: squared gains sum to 1, then scaled by level
-			k = lvl / sqrt(tot);
+			k = tot > 0 ? lvl / sqrt(tot) : 0;
 			for (s = 0; s < 6; s = s + 1) {
-				poke(tg, peek(vt, s) * k, i, s);
+				poke(tg, s < ns ? peek(vt, s) * k : 0, i, s);
 			}
 			poke(act, 1, i);
 		} else {
@@ -112,11 +134,16 @@ ctr = upd ? bs - 1 : min(ctr - 1, bs - 1);
 for (s = 0; s < 6; s = s + 1) {
 	poke(acc, 0, s);
 }
+mon = 0;
+mc = exp(-1000 / (20 * samplerate));   // 20 ms level smoothing for the monitor
 
 for (i = 0; i < 24; i = i + 1) {
 	if (peek(act, i) > 0) {
 		sig = peek(ins, i);
 		coef = peek(cf, i);
+		ml = mix(peek(pts, i, 2), peek(mlv, i), mc);
+		poke(mlv, ml, i);
+		mon = mon + sig * ml;
 		for (s = 0; s < 6; s = s + 1) {
 			g = mix(peek(tg, i, s), peek(st, i, s), coef);
 			poke(st, g, i, s);
@@ -125,9 +152,22 @@ for (i = 0; i < 24; i = i + 1) {
 	}
 }
 
-out1 = peek(acc, 0);
-out2 = peek(acc, 1);
-out3 = peek(acc, 2);
-out4 = peek(acc, 3);
-out5 = peek(acc, 4);
-out6 = peek(acc, 5);
+// calibration: per-speaker delay and gain trim
+msr = samplerate * 0.001;
+
+dl1.write(peek(acc, 0));
+dl2.write(peek(acc, 1));
+dl3.write(peek(acc, 2));
+dl4.write(peek(acc, 3));
+dl5.write(peek(acc, 4));
+dl6.write(peek(acc, 5));
+
+out1 = dl1.read(peek(spk, 0, 2) * msr) * peek(spk, 0, 3);
+out2 = dl2.read(peek(spk, 1, 2) * msr) * peek(spk, 1, 3);
+out3 = dl3.read(peek(spk, 2, 2) * msr) * peek(spk, 2, 3);
+out4 = dl4.read(peek(spk, 3, 2) * msr) * peek(spk, 3, 3);
+sp5 = dl5.read(peek(spk, 4, 2) * msr) * peek(spk, 4, 3);
+sp6 = dl6.read(peek(spk, 5, 2) * msr) * peek(spk, 5, 3);
+mo = mon * mongain;
+out5 = ns > 4 ? sp5 : mo;
+out6 = ns > 5 ? sp6 : mo;
