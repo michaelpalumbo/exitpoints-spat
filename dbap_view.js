@@ -17,17 +17,24 @@
 // Mouse:
 //   GLIDE/CUT box              same as TAB
 //   mode box                   same as its number key
-//   unit box                   toggle (M); shift-click: home (R)
+//   unit box                   only while editing a line-up (M and R are on the
+//                              nanoKONTROL2)
 //   drag a unit in the room    manual: move its home position
-//                              loop: record a path, loops on release
+//                              loop: record a path, loops on release; hold shift
+//                              during the drag to make that stretch a jump
+//                              (shown as a thin straight line; the unit cuts
+//                              straight across it)
 //                              (in assign mode, by each unit's behaviour)
-//   shift-click a unit in the room (loop / assign): clear its loop
+//   shift held when you start a loop drag: the first stretch (up to where you
+//   let go of shift) is dropped, so the loop starts there
+//   (loops are deleted on the nanoKONTROL2 only: hold S for 2 s)
+//   HIDE / SHOW HOME POSITIONS (header): the X marking each unit's home
 //   EDIT LINE-UP (switchemups scenes only): while on, clicking a unit box opens
 //   a list to choose that slot's source; sources that would reuse a channel
 //   already in the line-up are greyed out
 //
-// Outlet: key <ascii>, toggle <n>, home <n>, drag <n> <x> <y>, dragend <n>,
-//         clearloop <n>, lineupedit <0|1>, setkey <slot> <id>  -> dbap_behave.js
+// Outlet: key <ascii>, drag <n> <x> <y> <shift>, dragend <n>,
+//         lineupedit <0|1>, setkey <slot> <id>  -> dbap_behave.js
 
 autowatch = 1;
 inlets = 1;
@@ -87,6 +94,7 @@ let hits = [];      // clickable boxes from the last paint
 let map = null;     // metres <-> pixels, from the last paint
 let dragUnit = 0;
 let dragOff = [0, 0];   // unit centre minus mouse, in metres, while dragging
+let showHomes = 1;      // X at each unit's home
 let picker = 0;     // unit slot whose source list is open (line-up editing), 0 = closed
 let pickHits = [];
 let seeThrough = 0;
@@ -236,7 +244,11 @@ function drawHeader(W, y0) {
 		hx += lw + 12;
 	}
 	const desc = st.editing ? "click a unit box below to choose its source" : (DESCRIPTIONS[bh.mode] || "");
-	const room = W - 120 - 10 - 150 - hx;   // up to the speed readout
+	const hw = 150, hbx = W - 120 - 10 - 130 - hw;   // home-positions button, left of the speed readout
+	rrect(hbx, y0 + 6, hw, h - 14, 4, C_SPK);
+	text(showHomes ? "HIDE HOME POSITIONS" : "SHOW HOME POSITIONS", hbx + hw / 2, y0 + 6 + (h - 14) / 2 + 4, 10, C_TEXT, "c");
+	hits.push({ x: hbx, y: y0 + 6, w: hw, h: h - 14, homes: 1 });
+	const room = hbx - 12 - hx;   // up to the home-positions button
 	if (desc && room > 60) text(fit("description: " + desc, 12, room), hx, y0 + 25, 12, st.editing ? C_LIT : C_WHITE);
 
 	const bw = 120, bx = W - bw - 10, by = y0 + 6, bhh = h - 14;
@@ -290,15 +302,44 @@ function drawMap(spk) {
 			if (bh.mode === "assign" && !(unitInfo[n] && unitInfo[n].beh === "loop")) continue;
 			const pts = toArr(loops[n]);
 			if (pts.length < 2) continue;
-			setc(unitCol(+n), 0.35);
-			mgraphics.set_line_width(1.5);
-			const a = P(pts[0][0], pts[0][1]);
-			mgraphics.move_to(a[0], a[1]);
-			for (const q of pts.slice(1)) {
-				const b = P(q[0], q[1]);
-				mgraphics.line_to(b[0], b[1]);
+			setc(unitCol(+n), 0.45);
+			mgraphics.set_line_width(3.5);
+			// travelled stretches thick, one path each; jumps thin
+			let open = false;
+			for (let i = 1; i < pts.length; i++) {
+				const a = P(pts[i - 1][0], pts[i - 1][1]), b = P(pts[i][0], pts[i][1]);
+				if (pts[i][2]) {
+					// a jump: a thin straight line from where it starts to where it lands
+					if (open) { mgraphics.stroke(); open = false; }
+					mgraphics.set_line_width(1);
+					mgraphics.move_to(a[0], a[1]);
+					mgraphics.line_to(b[0], b[1]);
+					mgraphics.stroke();
+					mgraphics.set_line_width(3.5);
+				} else {
+					if (!open) { mgraphics.move_to(a[0], a[1]); open = true; }
+					mgraphics.line_to(b[0], b[1]);
+				}
 			}
-			mgraphics.close_path();
+			if (open) mgraphics.stroke();
+			// the glide from the end back to the start
+			const e = P(pts[pts.length - 1][0], pts[pts.length - 1][1]), f = P(pts[0][0], pts[0][1]);
+			mgraphics.move_to(e[0], e[1]);
+			mgraphics.line_to(f[0], f[1]);
+			mgraphics.stroke();
+		}
+	}
+
+	// home positions: an X in each unit's colour
+	if (showHomes && bh) {
+		mgraphics.set_line_width(2);
+		for (const u of toArr(bh.units)) {
+			const hm = toArr(u.home);
+			if (hm.length < 2) continue;
+			const h = P(hm[0], hm[1]);
+			setc(unitCol(u.n), 0.9);
+			mgraphics.move_to(h[0] - 6, h[1] - 6); mgraphics.line_to(h[0] + 6, h[1] + 6);
+			mgraphics.move_to(h[0] - 6, h[1] + 6); mgraphics.line_to(h[0] + 6, h[1] - 6);
 			mgraphics.stroke();
 		}
 	}
@@ -427,7 +468,7 @@ function drawUnits(x, y, w, h) {
 		text(fit(tag, 12, bw - 38), bx + 28, y + 18, 12, u.selected ? C_LIT : C_DIM);
 		text(fit(unitLabel(u).toUpperCase(), 13, bw - 16), bx + 10, y + 41, 13, st.editing ? C_LIT : C_TEXT);
 		text(inLabel(u), bx + 10, y + h - 9, 13, C_WHITE);
-		if (!st.editing) hits.push({ x: bx, y, w: bw - 4, h, unit: n });
+
 	}
 }
 
@@ -536,9 +577,9 @@ function onclick(x, y, but, cmd, shift) {
 	}
 	for (const b of hits) {
 		if (inside(b, x, y)) {
-			if (b.lineup !== undefined) outlet(0, "lineupedit", b.lineup);
+			if (b.homes) { showHomes = showHomes ? 0 : 1; mgraphics.redraw(); }
+			else if (b.lineup !== undefined) outlet(0, "lineupedit", b.lineup);
 			else if (b.pick) { picker = b.pick; mgraphics.redraw(); }
-			else if (b.unit) outlet(0, shift ? "home" : "toggle", b.unit);
 			else outlet(0, "key", b.key);
 			return;
 		}
@@ -548,17 +589,13 @@ function onclick(x, y, but, cmd, shift) {
 	const hit = unitAt(x, y);
 	if (!hit) return;
 	const n = hit.n;
-	if (shift && (bh.mode === "loop" || bh.mode === "assign")) {
-		outlet(0, "clearloop", n);
-		return;
-	}
 	dragUnit = n;
 	dragOff = hit.off;
 	const m = map.M(x, y);
-	outlet(0, "drag", n, m[0] + dragOff[0], m[1] + dragOff[1]);
+	outlet(0, "drag", n, m[0] + dragOff[0], m[1] + dragOff[1], shift ? 1 : 0);
 }
 
-function ondrag(x, y, but) {
+function ondrag(x, y, but, cmd, shift) {
 	if (!dragUnit) return;
 	if (!but) {
 		outlet(0, "dragend", dragUnit);
@@ -566,7 +603,7 @@ function ondrag(x, y, but) {
 		return;
 	}
 	const m = map.M(x, y);
-	outlet(0, "drag", dragUnit, m[0] + dragOff[0], m[1] + dragOff[1]);
+	outlet(0, "drag", dragUnit, m[0] + dragOff[0], m[1] + dragOff[1], shift ? 1 : 0);
 }
 
 function onresize() {

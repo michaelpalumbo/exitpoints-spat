@@ -38,9 +38,12 @@
 //                              range, homes, loops and assignments are kept)
 //
 // From the room view (mouse; manual and loop, or units assigned to them):
-//   drag <n> <x> <y>, dragend <n>
+//   drag <n> <x> <y> [shift], dragend <n>
 //     manual: moves the unit's home (stored per scene)
-//     loop:   records the unit's path while dragging, loops it on release
+//     loop:   records the unit's path while dragging, loops it on release.
+//             Stretches dragged with shift held become jumps: on playback the
+//             unit cuts straight across them, taking no time. A shift stretch
+//             at the very start is dropped, so the loop starts where it ends.
 //
 // Other: dictionary dbap_state (from dbap_control.js),
 //        saveparams <file.json>, loadparams <file.json>
@@ -65,6 +68,7 @@ const SMOOTH_SLEW = 50;     // ms, continuous movement
 const HOP_SLEW = 3;         // ms, hard cuts (just enough to avoid clicks)
 const LOOP_CLOSE = 0.4;     // s, glide from a loop's end back to its start
 const LOOP_MAX_PTS = 3000;
+const JUMP_CUT_S = 0.08;     // after a loop jump, treat movement as a cut for this long
 const CUT_HOME_DWELL = 1000; // ms at home before going back, with cut (M on)
 const TAU = Math.PI * 2;
 const NUNITS = 8;
@@ -299,7 +303,7 @@ function resetshow() {
 	post("dbap_behave: show reset (all frozen, speed x1, accel instant)\n");
 }
 
-function drag(n, x, y) {
+function drag(n, x, y, shift) {
 	const u = unitOf(n);
 	if (!u) return;
 	const beh = behOf(u);
@@ -325,7 +329,9 @@ function drag(n, x, y) {
 		}
 		const t = now - u.rec.t0;
 		if (t - u.rec.last >= 15 && u.rec.pts.length < LOOP_MAX_PTS) {
-			u.rec.pts.push([round3(t / 1000), round3(x), round3(y)]);
+			const pt = [round3(t / 1000), round3(x), round3(y)];
+			if (shift) pt.push(1);   // part of a jump
+			u.rec.pts.push(pt);
 			u.rec.last = t;
 		}
 	}
@@ -337,7 +343,7 @@ function dragend(n) {
 	if (!u) return;
 	u.dragging = false;
 	if (u.rec) {
-		const pts = u.rec.pts;
+		const pts = withJumps(u.rec.pts);
 		u.rec = null;
 		if (pts.length >= 3 && pts[pts.length - 1][0] > 0.3) {
 			u.p.loop = { dur: pts[pts.length - 1][0], pts };
@@ -351,6 +357,34 @@ function dragend(n) {
 	u.vel = [0, 0];
 	if (!isActive(u)) u.hold = u.pos.slice();
 	publish();
+}
+
+// shift-dragged stretches become jumps: their points are dropped, the time
+// they took is removed, and the next point is marked as a jump arrival
+// ([t, x, y, 1]), reached 1 ms after the point before the jump
+function withJumps(raw) {
+	const out = [];
+	let offset = 0, inJump = false;
+	for (const p of raw) {
+		if (p[3]) {
+			if (out.length) inJump = true;   // a shift at the very start just drops points
+			continue;
+		}
+		if (inJump && out.length) {
+			const prevT = out[out.length - 1][0];   // already on the new timeline
+			offset = p[0] - (prevT + 0.001);         // everything after moves up by this
+			out.push([round3(prevT + 0.001), p[1], p[2], 1]);
+			inJump = false;
+		} else {
+			out.push([round3(p[0] - offset), p[1], p[2]]);
+		}
+	}
+	if (out.length) {
+		// times start at 0
+		const t0 = out[0][0];
+		for (const q of out) q[0] = round3(q[0] - t0);
+	}
+	return out;
 }
 
 function clearloop(n) {
@@ -830,6 +864,12 @@ function loopPoint(u, H) {
 		if (pts[mid][0] <= tt) lo = mid; else hi = mid;
 	}
 	const a = pts[lo], b = pts[hi];
+	// a jump: stay at its start until the 1 ms jump, then cut (accel ignored)
+	if (b[3]) return { x: a[1], y: a[2], kind: "cut" };
+	if (a[3] && tt - a[0] < JUMP_CUT_S) {
+		const k0 = b[0] > a[0] ? (tt - a[0]) / (b[0] - a[0]) : 0;
+		return { x: a[1] + (b[1] - a[1]) * k0, y: a[2] + (b[2] - a[2]) * k0, kind: "cut" };
+	}
 	const k = b[0] > a[0] ? (tt - a[0]) / (b[0] - a[0]) : 0;
 	return at(a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k);
 }
@@ -921,9 +961,15 @@ function publishLoops() {
 	for (const u of units) {
 		const L = u.p.loop;
 		if (!L || !L.pts) continue;
-		const step = Math.max(1, Math.floor(L.pts.length / 200));
+		// thinned for drawing, but every jump and the point before it are kept;
+		// each point is [x, y, 1 if the line arriving here is a jump]
+		const P = L.pts, n = P.length;
+		const step = Math.max(1, Math.floor(n / 200));
 		const pts = [];
-		for (let i = 0; i < L.pts.length; i += step) pts.push([L.pts[i][1], L.pts[i][2]]);
+		for (let i = 0; i < n; i++) {
+			const keep = i % step === 0 || i === n - 1 || P[i][3] || (i + 1 < n && P[i + 1][3]);
+			if (keep) pts.push([P[i][1], P[i][2], P[i][3] ? 1 : 0]);
+		}
 		out[u.n] = pts;
 	}
 	loopsDict.parse(JSON.stringify({ loops: out }));

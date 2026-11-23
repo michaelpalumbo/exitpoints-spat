@@ -420,8 +420,8 @@ function labels() {
 		const u = U[n];
 		const has = !!u.id;
 		let sl = "";
-		if (has && u.selected) sl = "selected";
-		else if (has && playingLoop(u)) sl = "loop";
+		if (has && mode === "assign") sl = u.selected ? "selected" : "select";
+		else if (has && playingLoop(u)) sl = "delete";   // hold 2 s to delete the loop
 		outlet(1, "btn", S0 + n, sl);
 		outlet(1, "btn", M0 + n, has ? (u.active ? "movable" : "frozen") : "");
 		outlet(1, "btn", R0 + n, has && !unitIsHome(n) ? "home" : "");

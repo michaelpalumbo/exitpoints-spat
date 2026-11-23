@@ -1,141 +1,569 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Quad panner: operator guide</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quad Panner: Operator Guide</title>
 <style>
-	body { background: #000; color: #ddd; font: 15px/1.45 -apple-system, Helvetica, Arial, sans-serif; margin: 0; padding: 18px 22px 40px; max-width: 860px; }
-	h1 { font-size: 22px; color: #fff; margin: 0 0 4px; }
-	h2 { font-size: 17px; color: #fff; margin: 26px 0 8px; border-bottom: 1px solid #333; padding-bottom: 4px; }
-	p { margin: 6px 0; }
-	.sub { color: #888; margin-bottom: 14px; }
-	table { border-collapse: collapse; width: 100%; margin: 6px 0; }
-	td, th { text-align: left; padding: 4px 8px; vertical-align: top; border-bottom: 1px solid #222; }
-	th { color: #888; font-weight: normal; font-size: 13px; }
-	td:first-child { white-space: nowrap; color: #fff; }
-	kbd { background: #222; border: 1px solid #444; border-radius: 3px; padding: 0 5px; color: #fff; font: 13px Menlo, monospace; }
-	ol { padding-left: 22px; margin: 6px 0; }
-	li { margin: 4px 0; }
-	.box { background: #141416; border-left: 3px solid #f25a33; padding: 8px 12px; margin: 10px 0; }
-	.box.blue { border-color: #73bfff; }
-	.k { color: #f25a33; }
+:root {
+  --bg: #000; --panel: #141416; --line: #2e2e34; --text: #d9d9dc; --dim: #8c8c92;
+  --blue: #73bfff; --yellow: #ffd933; --orange: #f2593a;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--bg); color: var(--text);
+  font: 15px/1.55 -apple-system, "Helvetica Neue", Arial, sans-serif; }
+#side { position: fixed; top: 0; left: 0; bottom: 0; width: 250px; overflow-y: auto;
+  background: var(--panel); border-right: 1px solid var(--line); padding: 16px 14px; }
+#side .t { font-weight: 700; letter-spacing: .04em; text-transform: uppercase; font-size: 12px;
+  color: var(--dim); margin-bottom: 10px; }
+#q { width: 100%; padding: 7px 9px; border-radius: 6px; border: 1px solid var(--line);
+  background: var(--bg); color: var(--text); font-size: 14px; margin-bottom: 12px; }
+#side a { display: block; color: var(--text); text-decoration: none; padding: 3px 6px;
+  border-radius: 4px; font-size: 14px; }
+#side a.l3 { padding-left: 20px; color: var(--dim); font-size: 13px; }
+#side a:hover { background: #222228; }
+#side a.on { color: var(--blue); }
+#side a.hide { display: none; }
+main { margin-left: 250px; padding: 24px 40px 80px; max-width: 980px; }
+h1 { font-size: 28px; margin: 0 0 4px; }
+.credit { color: var(--dim); margin: 0 0 14px; }
+h2 { font-size: 22px; margin: 34px 0 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+h3 { font-size: 17px; margin: 24px 0 8px; color: var(--blue); }
+section:first-of-type h2 { border-top: none; }
+a { color: var(--blue); }
+code, kbd { background: #222228; padding: 1px 5px; border-radius: 4px; font-size: 13px;
+  font-family: Menlo, Consolas, monospace; color: #fff; }
+kbd { border: 1px solid #44444c; }
+strong { color: #fff; }
+blockquote { margin: 12px 0; padding: 8px 14px; border-left: 3px solid var(--yellow);
+  background: var(--panel); border-radius: 0 6px 6px 0; }
+blockquote.warn { border-left-color: var(--orange); }
+.tablewrap { overflow-x: auto; margin: 10px 0 14px; }
+table { border-collapse: collapse; font-size: 14px; }
+th, td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: var(--panel); color: var(--dim); font-weight: 600; }
+li { margin: 3px 0; }
+mark { background: var(--yellow); color: #000; border-radius: 2px; }
+section.hide { display: none; }
+#none { display: none; color: var(--dim); margin-top: 30px; }
+@media (max-width: 760px) {
+  #side { position: static; width: auto; border-right: none; border-bottom: 1px solid var(--line); }
+  main { margin-left: 0; padding: 16px; }
+}
 </style>
 </head>
 <body>
+<nav id="side">
+  <div class="t">Quad Panner: Operator Guide</div>
+  <input id="q" type="search" placeholder="Search" autocomplete="off">
+  <a class="l2" href="#words" data-sec="words">Words used in this guide</a>
+  <a class="l2" href="#golden-rules" data-sec="golden-rules">Golden rules</a>
+  <a class="l2" href="#quick-reference" data-sec="quick-reference">Quick reference</a>
+  <a class="l3" href="#qr-keys" data-sec="quick-reference">Keyboard</a>
+  <a class="l3" href="#qr-strip" data-sec="quick-reference">nanoKONTROL2 strips</a>
+  <a class="l3" href="#qr-pages" data-sec="quick-reference">Knob pages</a>
+  <a class="l3" href="#qr-lights" data-sec="quick-reference">What the lights mean</a>
+  <a class="l3" href="#qr-mouse" data-sec="quick-reference">Mouse (room view)</a>
+  <a class="l2" href="#before-each-set" data-sec="before-each-set">Before the show and each set</a>
+  <a class="l2" href="#scenes" data-sec="scenes">Scenes</a>
+  <a class="l2" href="#room-view" data-sec="room-view">The room view</a>
+  <a class="l3" href="#room-map" data-sec="room-view">The room</a>
+  <a class="l3" href="#room-header" data-sec="room-view">Mode buttons and header</a>
+  <a class="l3" href="#room-units" data-sec="room-view">Unit boxes</a>
+  <a class="l2" href="#nanokontrol" data-sec="nanokontrol">The nanoKONTROL2</a>
+  <a class="l3" href="#faders" data-sec="nanokontrol">Faders: levels</a>
+  <a class="l3" href="#m-button" data-sec="nanokontrol">M: movable / frozen</a>
+  <a class="l3" href="#r-button" data-sec="nanokontrol">R: home</a>
+  <a class="l3" href="#s-button" data-sec="nanokontrol">S: select and delete</a>
+  <a class="l3" href="#knob-pages" data-sec="nanokontrol">Knob pages</a>
+  <a class="l3" href="#nk-screen" data-sec="nanokontrol">The screen version</a>
+  <a class="l2" href="#pickup" data-sec="pickup">Knobs, faders and pickup</a>
+  <a class="l2" href="#glide-cut" data-sec="glide-cut">Glide and cut</a>
+  <a class="l2" href="#modes" data-sec="modes">Modes</a>
+  <a class="l3" href="#mode-set-home" data-sec="modes">1 Set home positions</a>
+  <a class="l3" href="#mode-drift" data-sec="modes">2 Drift</a>
+  <a class="l3" href="#mode-orbit" data-sec="modes">3 Orbit</a>
+  <a class="l3" href="#mode-hop" data-sec="modes">4 Hop</a>
+  <a class="l3" href="#mode-pulse" data-sec="modes">5 Pulse</a>
+  <a class="l3" href="#mode-swarm" data-sec="modes">6 Swarm</a>
+  <a class="l3" href="#mode-sway" data-sec="modes">7 Sway</a>
+  <a class="l3" href="#mode-perimeter" data-sec="modes">8 Perimeter</a>
+  <a class="l3" href="#mode-loop" data-sec="modes">9 Loop</a>
+  <a class="l3" href="#mode-assign" data-sec="modes">0 Assign</a>
+  <a class="l2" href="#switchemups" data-sec="switchemups">Switchemups line-ups</a>
+  <a class="l3" href="#sw-create" data-sec="switchemups">Create or edit a set</a>
+  <a class="l3" href="#sw-erase" data-sec="switchemups">Start a set over</a>
+  <a class="l2" href="#monitoring" data-sec="monitoring">Monitoring switch</a>
+  <a class="l2" href="#saving" data-sec="saving">What's saved</a>
+  <a class="l2" href="#troubleshooting" data-sec="troubleshooting">Troubleshooting</a>
+  <a class="l2" href="#technical-notes" data-sec="technical-notes">Technical notes</a>
+  <a class="l3" href="#tn-files" data-sec="technical-notes">Files</a>
+  <a class="l3" href="#tn-flow" data-sec="technical-notes">Signal flow</a>
+  <a class="l3" href="#tn-messages" data-sec="technical-notes">Messages</a>
+  <a class="l3" href="#tn-gen" data-sec="technical-notes">Panner gen~</a>
+  <a class="l3" href="#tn-controller" data-sec="technical-notes">Controller</a>
+</nav>
+<main>
+<h1 id="top">Quad Panner: Operator Guide</h1>
+<p class="credit">Created by Michael Palumbo, Nov 2026, for Exit Points #78</p>
+<p>You move the instruments around the four speakers and set their levels. FOH handles gain, EQ and the backup PA. Everything is played from the nanoKONTROL2, the number keys and the room view.</p>
 
-<h1>Quad panner: operator guide</h1>
-<p class="sub">Created by Michael Palumbo, Nov 2026, for Exit Points #78</p>
-<p>You move the instruments around the four speakers and set their levels. FOH handles gain, EQ and the backup PA.</p>
+<section id="sec-words">
+<h2 id="words">Words used in this guide</h2>
+<div class="tablewrap"><table><thead><tr><th>Word</th><th>Means</th></tr></thead><tbody>
+<tr><td><strong>Unit</strong></td><td>One instrument (or one player's mics) that moves as a single sound. Up to 8 per set, one per nanoKONTROL2 strip.</td></tr>
+<tr><td><strong>Scene</strong></td><td>One set's units, with their levels and settings: ensemble 1, ensemble 2, or switchemups 1-4.</td></tr>
+<tr><td><strong>Mode</strong></td><td>A way of moving, picked with the number keys (drift, orbit, hop...).</td></tr>
+<tr><td><strong>Movable / frozen</strong></td><td>A movable unit follows the mode. A frozen unit stays where it is. Switched with <strong>M</strong>.</td></tr>
+<tr><td><strong>Home</strong></td><td>A unit's resting place in the room, set in mode 1. Shown as an X in the unit's colour. <strong>R</strong> sends a unit there.</td></tr>
+<tr><td><strong>Pickup</strong></td><td>A knob or fader does nothing until you move it past its current value, so nothing jumps.</td></tr>
+<tr><td><strong>IN number</strong></td><td>The console channel(s) a unit uses, shown in its box (<code>IN:5/6</code>). Use it when talking to FOH.</td></tr>
+<tr><td><strong>Glide / cut</strong></td><td>Whether changes happen smoothly or instantly. <kbd>TAB</kbd> switches.</td></tr>
+<tr><td><strong>Line-up</strong></td><td>The units chosen for a switchemups set.</td></tr>
+<tr><td><strong>Spread</strong></td><td>How big a unit sounds: from a point in one speaker to a wide, blurry sound shared by several. Shown as the halo around the unit.</td></tr>
+<tr><td><strong>Range</strong></td><td>How far a unit travels from its home in a mode. 0% stays home.</td></tr>
+</tbody></table></div>
+</section>
 
-<h2>Words used in this guide</h2>
-<table>
-	<tr><td>Unit</td><td>One instrument (or one player's mics) that moves as a single sound. Up to 8 per set, one per nanoKONTROL2 strip.</td></tr>
-	<tr><td>Scene</td><td>One set's list of units, with their levels and settings: ensemble 1, ensemble 2, or switchemups 1-4.</td></tr>
-	<tr><td>Mode</td><td>A way of moving, picked with the number keys (drift, orbit, hop...).</td></tr>
-	<tr><td>Movable / frozen</td><td>A movable unit follows the mode. A frozen unit stays where it is. Switched with <b>M</b>.</td></tr>
-	<tr><td>Home</td><td>A unit's resting place in the room, set in mode 1 (set home positions). <b>R</b> sends a unit there from any other mode.</td></tr>
-	<tr><td>Pickup</td><td>A knob or fader does nothing until you move it past its current value, so nothing jumps.</td></tr>
-	<tr><td>IN number</td><td>The console channel(s) a unit uses, shown in its box (<kbd>IN:5/6</kbd>). Use it when talking to FOH.</td></tr>
-	<tr><td>Glide / cut</td><td>Whether changes happen smoothly or instantly. <kbd>TAB</kbd> switches.</td></tr>
-	<tr><td>Line-up</td><td>The units chosen for a switchemups set.</td></tr>
-</table>
+<section id="sec-golden-rules">
+<h2 id="golden-rules">Golden rules</h2>
+<ul>
+<li><strong>Keep the Max window in front</strong>, or the number keys won't work.</li>
+<li><strong>Every unit starts frozen.</strong> Nothing moves until you press its <strong>M</strong>.</li>
+<li><strong>Frozen and movable are kept separately for each mode.</strong> A unit you made movable in orbit is still frozen in drift until you press its M there too. When you switch modes, each unit goes back to however you left it in that mode.</li>
+<li>The exception is <strong>mode 1, set home positions</strong>: there every unit is always movable, so it sits at its home and you can drag it to a new one.</li>
+<li><strong>Everything saves itself.</strong> You never need to save the patch.</li>
+</ul>
+</section>
 
-<div class="box blue">
-<p><b>Golden rules</b></p>
-<p>Keep the Max window in front, or the number keys won't work.</p>
-<p>Every unit starts <b>frozen</b>. Nothing moves until you press its <b>M</b> button.</p>
-<p>Frozen and movable are kept <b>separately for each mode</b>. A unit you made movable in orbit is still frozen in drift until you press its M there too. When you switch modes, each unit goes back to however you left it in that mode.</p>
-<p>The one exception is mode 1, <b>set home positions</b>: there every unit is always movable (all M buttons lit, and M does nothing), so each unit sits at its home and you can drag it to a new one.</p>
-<p>Everything saves itself. You never need to save the patch.</p>
-</div>
+<section id="sec-quick-reference">
+<h2 id="quick-reference">Quick reference</h2>
+<h3 id="qr-keys">Keyboard</h3>
+<div class="tablewrap"><table><thead><tr><th>Key</th><th>Mode</th><th>Units...</th></tr></thead><tbody>
+<tr><td><kbd>1</kbd></td><td>set home positions</td><td>sit at their homes; drag one to set a new home</td></tr>
+<tr><td><kbd>2</kbd></td><td>drift</td><td>wander slowly around the whole room</td></tr>
+<tr><td><kbd>3</kbd></td><td>orbit</td><td>circle the middle of the room</td></tr>
+<tr><td><kbd>4</kbd></td><td>hop</td><td>jump between speakers at random</td></tr>
+<tr><td><kbd>5</kbd></td><td>pulse</td><td>jump between speakers together, on a beat</td></tr>
+<tr><td><kbd>6</kbd></td><td>swarm</td><td>cluster together and travel as a group</td></tr>
+<tr><td><kbd>7</kbd></td><td>sway</td><td>sway from the front of the room to the back</td></tr>
+<tr><td><kbd>8</kbd></td><td>perimeter</td><td>spread around the walls and slowly circle</td></tr>
+<tr><td><kbd>9</kbd></td><td>loop</td><td>follow a path you draw with the mouse</td></tr>
+<tr><td><kbd>0</kbd></td><td>assign</td><td>each run their own mode</td></tr>
+<tr><td><kbd>TAB</kbd></td><td colspan="2">glide or cut (see <a href="#glide-cut">Glide and cut</a>)</td></tr>
+</tbody></table></div>
 
-<h2>Before each set</h2>
+<h3 id="qr-strip">nanoKONTROL2 strips</h3>
+<p>Strip 1 is unit 1, and so on.</p>
+<div class="tablewrap"><table><thead><tr><th>Control</th><th>Does</th></tr></thead><tbody>
+<tr><td><strong>Fader</strong></td><td>Unit level: 0 dB at the top, off at the very bottom</td></tr>
+<tr><td><strong>M</strong></td><td>Movable / frozen in this mode. Always movable in set home positions.</td></tr>
+<tr><td><strong>R</strong></td><td>Send home. M off: stays home. M on: goes back to the mode after. Nothing in set home positions.</td></tr>
+<tr><td><strong>S</strong> (tap)</td><td>Assign mode only: select the unit</td></tr>
+<tr><td><strong>S</strong> (hold 2 s)</td><td>Delete the unit's loop</td></tr>
+<tr><td><strong>Knob</strong></td><td>The unit's value on the current knob page</td></tr>
+</tbody></table></div>
+
+<h3 id="qr-pages">Knob pages</h3>
+<div class="tablewrap"><table><thead><tr><th>Button</th><th>Knobs set</th><th>Range</th><th>Kept</th></tr></thead><tbody>
+<tr><td><strong>&lt;&lt;</strong></td><td>spread</td><td>point (1 cm) to 4 m</td><td>per unit</td></tr>
+<tr><td><strong>&gt;&gt;</strong></td><td>width (stereo pairs and mic groups; single mics show n/a)</td><td>x0 to x5</td><td>per unit</td></tr>
+<tr><td><strong>STOP</strong></td><td>range</td><td>0 to 100%</td><td>per unit, per mode</td></tr>
+<tr><td><strong>PLAY</strong></td><td>speed</td><td>x1/4 to x6</td><td>per unit, per mode</td></tr>
+<tr><td><strong>REC</strong></td><td>accel: top is instant, lower gives the unit weight</td><td>instant to very heavy</td><td>per unit, per mode</td></tr>
+<tr><td><strong>CYCLE</strong></td><td>knob 1 overall speed, knob 2 glide time</td><td>x1/4 to x6; 0.2 to 10 s</td><td>global</td></tr>
+</tbody></table></div>
+<p>STOP, PLAY and REC are boxed together on the screen because they belong to the mode. They are greyed out in set home positions.</p>
+
+<h3 id="qr-lights">What the lights mean</h3>
+<div class="tablewrap"><table><thead><tr><th>Light</th><th>Means</th></tr></thead><tbody>
+<tr><td>M lit</td><td>movable</td></tr>
+<tr><td>R flashing</td><td>the unit is on its way home</td></tr>
+<tr><td>S lit</td><td>the unit is playing its loop</td></tr>
+<tr><td>S slow flash</td><td>selected (assign mode)</td></tr>
+<tr><td>S fast flash</td><td>held: the loop is about to be deleted</td></tr>
+<tr><td>Transport button lit</td><td>the knob page showing</td></tr>
+</tbody></table></div>
+
+<h3 id="qr-mouse">Mouse (room view)</h3>
+<div class="tablewrap"><table><thead><tr><th>Do</th><th>Where</th><th>Result</th></tr></thead><tbody>
+<tr><td>Click a mode button</td><td>any time</td><td>same as its number key</td></tr>
+<tr><td>Click GLIDE / CUT</td><td>any time</td><td>same as <kbd>TAB</kbd></td></tr>
+<tr><td>Drag a unit (its centre or any of its dots)</td><td>set home positions</td><td>moves its home</td></tr>
+<tr><td>Drag a unit</td><td>loop</td><td>records its loop</td></tr>
+<tr><td>Hold <kbd>shift</kbd> while dragging</td><td>loop</td><td>that stretch becomes a jump</td></tr>
+<tr><td>Hold <kbd>shift</kbd> as you click, then drag</td><td>loop</td><td>chooses where the loop starts</td></tr>
+<tr><td>HIDE / SHOW HOME POSITIONS</td><td>any time</td><td>hides or shows the home X marks</td></tr>
+<tr><td>EDIT LINE-UP</td><td>switchemups scenes</td><td>choose the units for that set</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="sec-before-each-set">
+<h2 id="before-each-set">Before the show and each set</h2>
+<h3>Before the show</h3>
 <ol>
-	<li>Load the scene with the scene buttons (ensemble 1, ensemble 2, or switchemups 1-4).</li>
-	<li>Check the 8 unit boxes at the bottom of the room view: each one shows its name and its input channels (for example <kbd>IN:5/6</kbd>).</li>
-	<li>Pick a mode with the number keys, then press <b>M</b> on the units you want moving.</li>
+<li>The <strong>monitoring switch</strong> is on <strong>Array Routing</strong> (see <a href="#monitoring">Monitoring switch</a>).</li>
+<li>The test signals are <strong>off</strong>.</li>
+<li>Press <strong>reset show</strong>: every unit frozen, speed x1 and accel instant everywhere. Levels, spread, width, range, homes, loops and line-ups are kept.</li>
 </ol>
-
-<h2>nanoKONTROL2</h2>
-<p>One channel strip per unit: strip 1 is unit 1, and so on.</p>
-<table>
-	<tr><td>Fader</td><td>Unit level. Top is full level (0 dB), the very bottom is off.</td></tr>
-	<tr><td>M</td><td>Make the unit movable or frozen. <b>Lit = movable.</b> In set home positions, all are lit and M does nothing.</td></tr>
-	<tr><td>R</td><td>Send the unit to its home (the one set in mode 1). R flashes while it travels.
-		<br><b>M off:</b> it stays home. <b>M on:</b> it goes straight back to what the mode is doing (in loop mode, back onto its loop).
-		<br>Does nothing in set home positions, where every unit is already home.</td></tr>
-	<tr><td>S (tap)</td><td>In assign mode only: select the unit (it flashes slowly). Tap again to deselect.</td></tr>
-	<tr><td>S (hold 2 s)</td><td>Delete the unit's loop. It flashes fast while you hold. Let go early to keep the loop.</td></tr>
-	<tr><td>Knobs</td><td>What they change depends on the transport button you last pressed (below).</td></tr>
-</table>
-<table>
-	<tr><th>Button</th><th>Knobs change</th></tr>
-	<tr><td>&lt;&lt;</td><td><b>spread</b>: from a point to a wide, blurry sound (the halo in the room view grows)</td></tr>
-	<tr><td>&gt;&gt;</td><td><b>width</b>: how far apart a stereo pair or mic group sits. Single mics show "n/a (mono)".</td></tr>
-	<tr><td>STOP</td><td><b>range</b>: how far the unit travels from home. 0% stays home.</td></tr>
-	<tr><td>PLAY</td><td><b>speed</b>: how fast the unit moves</td></tr>
-	<tr><td>REC</td><td><b>accel</b>: at the top it moves instantly, lower and it moves with weight</td></tr>
-	<tr><td>CYCLE</td><td><b>global</b>: knob 1 overall speed, knob 2 glide time</td></tr>
-</table>
-<p>Range, speed and accel are remembered <b>separately for each mode</b>. Level, spread and width are the same in every mode.</p>
-<p>In set home positions, range, speed and accel do nothing, so their buttons are greyed out and their knobs show "n/a".</p>
-<div class="box">
-<p><b>A knob or fader does nothing?</b> That's pickup. Move it until it passes the value shown on the screen (the line or dot), then it takes over. This stops levels from jumping.</p>
-</div>
-
-<h2>Keyboard</h2>
-<table>
-	<tr><td><kbd>1</kbd> set home positions</td><td>Every unit sits at its home. Drag a unit in the room view to set a new home. That's where <b>R</b> sends it in every other mode.</td></tr>
-	<tr><td><kbd>2</kbd> drift</td><td>Slow wandering around the room.</td></tr>
-	<tr><td><kbd>3</kbd> orbit</td><td>Circling the middle of the room.</td></tr>
-	<tr><td><kbd>4</kbd> hop</td><td>Jumps between speakers at random.</td></tr>
-	<tr><td><kbd>5</kbd> pulse</td><td>Jumps between speakers together, on a beat.</td></tr>
-	<tr><td><kbd>6</kbd> swarm</td><td>Clustered together, travelling as a group.</td></tr>
-	<tr><td><kbd>7</kbd> sway</td><td>Front of the room to the back and back again.</td></tr>
-	<tr><td><kbd>8</kbd> perimeter</td><td>Spread around the walls, slowly circling.</td></tr>
-	<tr><td><kbd>9</kbd> loop</td><td>Drag a unit in the room view to draw a path. It loops when you let go.</td></tr>
-	<tr><td><kbd>0</kbd> assign</td><td>Each unit runs its own mode. Tap <b>S</b> on units, then press a number to give them that mode.</td></tr>
-	<tr><td><kbd>TAB</kbd></td><td>Glide (smooth changes) or cut (instant changes). Shown top right of the room view.</td></tr>
-</table>
-
-<h2>Switchemups: create or edit a set</h2>
-<p>Do this in the second intermission, with the sign-up sheet. Each of the 4 sets is its own scene.</p>
+<h3>Before each set</h3>
 <ol>
-	<li>Load <b>switchemups 1</b> with the scene buttons.</li>
-	<li>Click the blue <b>EDIT LINE-UP</b> button at the top of the room view. It turns orange and says DONE.</li>
-	<li>Click unit box <b>1</b> at the bottom. A list opens.</li>
-	<li>Click the instrument or input for that player. Each entry shows its channels (<kbd>IN:15</kbd>).
-		<br>Grey entries are already used by another unit (it says which one).
-		<br>Someone on a channel that isn't a named instrument? Pick the <b>IN #</b> entry for that channel.</li>
-	<li>Repeat for each player (up to 8). Pick <b>(empty)</b> to clear a slot.</li>
-	<li>Click <b>DONE</b>.</li>
-	<li>Load <b>switchemups 2</b> and repeat, then 3 and 4.</li>
+<li>Load the scene with the scene buttons (ensemble 1, ensemble 2, or switchemups 1-4).</li>
+<li>Check the unit boxes: each shows its name and its input channels (<code>IN:5/6</code>).</li>
+<li>Pick a mode with the number keys, then press <strong>M</strong> on the units you want moving.</li>
 </ol>
-<p>Then for each set: load it, set the levels with the faders, and press <b>1</b> (set home positions) to drag each unit to roughly where that player stands. All of this is remembered.</p>
-<div class="box">
-<p><b>Start a set over from scratch:</b> press its <b>erase</b> button. It empties the line-up and forgets its levels and positions. Only switchemups sets can be erased.</p>
-<p><b>A problem with an input?</b> Tell FOH the IN number from the unit box.</p>
-</div>
+</section>
 
-<h2>Monitoring switch</h2>
-<p>Three buttons that choose where the sound goes.</p>
-<table>
-	<tr><th>Setting</th><th>Use it for</th></tr>
-	<tr><td>Array Routing - Direct-In Monitoring</td><td><b>The show.</b> The four speakers play the panned sound. Your headphones get every unit at its level, without the panning, so you can judge balance from your seat.</td></tr>
-	<tr><td>Practice (Laptop) - Direct-in Monitoring</td><td>Practising on your laptop: you hear every unit at its level, without the panning. Good for setting levels.</td></tr>
-	<tr><td>Practice (Laptop) - Post-Pan Monitoring</td><td>Practising on your laptop: you hear the panning folded down to stereo. Left and right movement comes through, front and back doesn't.</td></tr>
-</table>
-<div class="box">
-<p><b>Before the show, check it's on Array Routing.</b> The practice settings send sound to the laptop, not to the speakers.</p>
-</div>
+<section id="sec-scenes">
+<h2 id="scenes">Scenes</h2>
+<p>Each set is a scene: <strong>ensemble 1</strong>, <strong>ensemble 2</strong>, and <strong>switchemups 1-4</strong>. Load one with the scene buttons. A scene keeps its own levels, spread, width, homes, loops, assignments and per-mode settings, and all of it comes back when you load the scene again.</p>
+<p>When a scene loads, every unit is frozen (except in set home positions) and the knobs and faders need to pick up again. The current mode stays the same.</p>
+<p>The ensemble scenes are fixed. Switchemups scenes are built on the night: see <a href="#switchemups">Switchemups line-ups</a>.</p>
+</section>
 
-<h2>If something goes wrong</h2>
-<table>
-	<tr><td>Something too loud</td><td>Pull that unit's fader down (it picks up first, see above).</td></tr>
-	<tr><td>Too much movement</td><td>Press <b>M</b> to freeze units, then <b>R</b> to send them home.</td></tr>
-	<tr><td>Keys do nothing</td><td>Click the Max patch window so it's in front.</td></tr>
-	<tr><td>No sound at all from the quad</td><td>Check the monitoring switch is on Array Routing. If it is, tell FOH straight away: they bring up the backup PA.</td></tr>
-</table>
+<section id="sec-room-view">
+<h2 id="room-view">The room view</h2>
+<p>From top to bottom: the room, the mode buttons, the header, and the unit boxes.</p>
+<h3 id="room-map">The room</h3>
+<ul>
+<li>The square is the room, with the stage at the top. The four grey boxes are the speakers (FL, FR, BL, BR).</li>
+<li>The small <strong>+</strong> is the calibration position: the point the four speakers are aligned to (the middle of the audience).</li>
+<li>Each unit is drawn in its colour. Stereo pairs and mic groups show one dot per mic, joined by a line. A <strong>filled</strong> dot is movable, a <strong>hollow</strong> one is frozen.</li>
+<li>The <strong>halo</strong> around a unit shows its spread: a small ring is a point source, a big one is spread over several speakers.</li>
+<li>The coloured <strong>X</strong> marks each unit's home. <strong>HIDE / SHOW HOME POSITIONS</strong> in the header turns them off and on.</li>
+<li>While you turn a <strong>range</strong> knob, the unit shows a line from its home to where its movement would reach at 100%, for 2 seconds.</li>
+<li>In loop mode, each loop is drawn: <strong>thick</strong> where the unit travels, <strong>thin</strong> where it jumps.</li>
+</ul>
+<h3 id="room-header">Mode buttons and header</h3>
+<ul>
+<li>The <strong>mode buttons</strong> show the 10 modes; the current one is orange. Clicking one is the same as its number key.</li>
+<li>The <strong>header</strong> shows the scene, the mode, and a one-line description of what the mode does.</li>
+<li><strong>EDIT LINE-UP</strong> appears only in switchemups scenes.</li>
+<li>On the right: the overall speed, and the <strong>GLIDE / CUT</strong> button (blue for glide, with its time; orange for cut).</li>
+</ul>
+<h3 id="room-units">Unit boxes</h3>
+<p>One box per unit, matching the nanoKONTROL2 strips.</p>
+<div class="tablewrap"><table><thead><tr><th>Row</th><th>Shows</th></tr></thead><tbody>
+<tr><td>1</td><td>The unit number and its state: <em>movable</em> or <em>frozen</em> (and <em>loop</em> if it has one; in assign mode, its assigned mode)</td></tr>
+<tr><td>2</td><td>The unit's name</td></tr>
+<tr><td>3</td><td>Its input channels, e.g. <code>IN:17/18/19/20</code></td></tr>
+</tbody></table></div>
+<p>A <strong>full border</strong> means movable; just the <strong>bar on the left</strong> means frozen. The boxes only show state: use <strong>M</strong> and <strong>R</strong> on the nanoKONTROL2 to change it. (While editing a switchemups line-up, clicking a box opens the list of sources.)</p>
+</section>
 
+<section id="sec-nanokontrol">
+<h2 id="nanokontrol">The nanoKONTROL2</h2>
+<p>Each of the 8 channel strips belongs to one unit: fader 1, knob 1 and the S, M, R buttons of strip 1 all act on unit 1, and so on. The transport buttons choose what the knobs do.</p>
+
+<h3 id="faders">Faders: levels</h3>
+<p>The fader sets the unit's level: <strong>0 dB at the top</strong>, <strong>off at the very bottom</strong>. Levels are the same in every mode and are kept per scene. Set them at soundcheck; during the show, use them to fix something that's too loud or too quiet.</p>
+<p>Faders use pickup: see <a href="#pickup">Knobs, faders and pickup</a>.</p>
+
+<h3 id="m-button">M: movable / frozen</h3>
+<ul>
+<li>Press M to make the unit <strong>movable</strong> (lit) or <strong>frozen</strong> (dark) in the current mode.</li>
+<li>A frozen unit stays exactly where it is, wherever the mode had taken it.</li>
+<li>Each mode keeps its own M state for each unit.</li>
+<li>In <strong>set home positions</strong>, every M is lit and pressing it does nothing.</li>
+</ul>
+
+<h3 id="r-button">R: home</h3>
+<div class="tablewrap"><table><thead><tr><th>M is...</th><th>Pressing R</th></tr></thead><tbody>
+<tr><td>off (frozen)</td><td>The unit travels home and stays there.</td></tr>
+<tr><td>on (movable)</td><td>The unit travels home, then goes straight back to what the mode is doing (in loop mode, back onto its loop).</td></tr>
+</tbody></table></div>
+<p>R flashes while the unit is on its way and goes dark when it arrives. The trip takes the glide time (or is instant with cut, and then the unit waits 1 second at home before going back). In set home positions, R does nothing: every unit is already home.</p>
+
+<h3 id="s-button">S: select and delete</h3>
+<div class="tablewrap"><table><thead><tr><th>Do</th><th>Where</th><th>Result</th></tr></thead><tbody>
+<tr><td>Tap</td><td>assign mode</td><td>Select the unit (slow flash). Tap again to deselect.</td></tr>
+<tr><td>Hold 2 s</td><td>any mode</td><td>Delete the unit's loop. It flashes fast while you hold; let go early to keep the loop. Hold several S buttons to delete several.</td></tr>
+</tbody></table></div>
+<p>In loop mode, units with a loop show <strong>DELETE</strong> on their S button. S is lit while a unit is playing its loop.</p>
+
+<h3 id="knob-pages">Knob pages</h3>
+<p>Press a transport button to choose what the 8 knobs set. The button stays lit.</p>
+<div class="tablewrap"><table><thead><tr><th>Button</th><th>Knobs set</th><th>Kept</th></tr></thead><tbody>
+<tr><td><strong>&lt;&lt;</strong></td><td><strong>spread</strong>: from a point (1 cm) to 4 m. The halo grows as you turn.</td><td>per unit</td></tr>
+<tr><td><strong>&gt;&gt;</strong></td><td><strong>width</strong>: how far apart a stereo pair or mic group sits, x0 to x5. Single mics show <em>n/a (mono)</em>.</td><td>per unit</td></tr>
+<tr><td><strong>STOP</strong></td><td><strong>range</strong>: how far the unit travels from home, 0 to 100%</td><td>per unit, per mode</td></tr>
+<tr><td><strong>PLAY</strong></td><td><strong>speed</strong>: how fast the unit moves, x1/4 to x6</td><td>per unit, per mode</td></tr>
+<tr><td><strong>REC</strong></td><td><strong>accel</strong>: at the top the unit moves instantly; lower, it has weight and swings into place</td><td>per unit, per mode</td></tr>
+<tr><td><strong>CYCLE</strong></td><td><strong>global</strong>: knob 1 overall speed (x1/4 to x6), knob 2 glide time (0.2 to 10 s)</td><td>global</td></tr>
+</tbody></table></div>
+<p>Range, speed and accel belong to the mode, so the screen boxes them with the mode's name (e.g. ORBIT SETTINGS). In set home positions they do nothing and are greyed out. In assign mode, each unit's knob sets the value for the mode it's assigned to.</p>
+
+<h3 id="nk-screen">The screen version</h3>
+<p>The patch shows a copy of the nanoKONTROL2 that mirrors the real one, lights included. You can click its buttons, drag its knobs up and down, and click or drag its faders, and the results are the same as on the hardware. Screen knobs and faders set values directly, without pickup; the hardware then picks up from the new value. Holding S for 2 seconds works with the mouse too.</p>
+</section>
+
+<section id="sec-pickup">
+<h2 id="pickup">Knobs, faders and pickup</h2>
+<p>The computer can't move the nanoKONTROL2's knobs or faders, so when you change page, mode or scene, a knob is probably sitting somewhere different from the value it now controls. To stop values jumping:</p>
+<blockquote>A knob or fader does nothing until you move it through the current value. From then on it follows your hand.</blockquote>
+<div class="tablewrap"><table><thead><tr><th></th><th>Blue</th><th>Yellow</th></tr></thead><tbody>
+<tr><td><strong>Knob</strong></td><td>arc: the current value</td><td>tick: where the hardware knob is</td></tr>
+<tr><td><strong>Fader</strong></td><td>bar: the current level</td><td>line: where the hardware fader is</td></tr>
+</tbody></table></div>
+<p>Move the control until the yellow meets the end of the blue, and it takes over.</p>
+</section>
+
+<section id="sec-glide-cut">
+<h2 id="glide-cut">Glide and cut</h2>
+<p><kbd>TAB</kbd> (or the GLIDE / CUT button) chooses how units change course:</p>
+<ul>
+<li><strong>Glide</strong> (blue): units move smoothly to their new path over the glide time (CYCLE page, knob 2).</li>
+<li><strong>Cut</strong> (orange): units jump straight there.</li>
+</ul>
+<p>It applies when you change mode, press M, press R, or assign a mode. It doesn't change the hard jumps in hop, pulse or loop jumps: those always cut.</p>
+</section>
+
+<section id="sec-modes">
+<h2 id="modes">Modes</h2>
+<p>Every mode moves the <strong>movable</strong> units; frozen units stay put. Each unit has a fixed place in the pattern (by its number), so freezing one never moves the others.</p>
+<div class="tablewrap"><table><thead><tr><th>Knob</th><th>In every mode except set home positions</th></tr></thead><tbody>
+<tr><td>range</td><td>scales how far the movement reaches from home</td></tr>
+<tr><td>speed</td><td>speeds the pattern up or slows it down</td></tr>
+<tr><td>accel</td><td>gives the unit weight: it lags behind and swings into place</td></tr>
+</tbody></table></div>
+
+<h3 id="mode-set-home">1 Set home positions</h3>
+<p>Every unit sits at its home, and every unit is always movable (all M lit; M does nothing). <strong>Drag a unit</strong> in the room view to give it a new home: that's where <strong>R</strong> sends it in every other mode. Homes are kept per scene.</p>
+<p>R, range, speed and accel do nothing here and are greyed out. Use this mode to arrange the stage image at soundcheck, or as a resting state between sections.</p>
+
+<h3 id="mode-drift">2 Drift</h3>
+<p>Units wander slowly over the whole room, each on its own path. With range down, they wander only near their homes.</p>
+
+<h3 id="mode-orbit">3 Orbit</h3>
+<p>Units circle the middle of the room, evenly spaced, at three different distances from the centre. Neighbouring units go in opposite directions. One lap takes about 40 seconds at speed x1.</p>
+
+<h3 id="mode-hop">4 Hop</h3>
+<p>Units jump between speakers at random, every 2 to 6 seconds, never to the speaker they're already on. With accel below instant, each jump becomes a straight, smooth move from speaker to speaker instead.</p>
+
+<h3 id="mode-pulse">5 Pulse</h3>
+<p>Units jump between speakers on a shared beat (every 1.5 seconds at speed x1), each to a different speaker. Units with the same speed stay in step. Accel has no effect: pulse always jumps.</p>
+
+<h3 id="mode-swarm">6 Swarm</h3>
+<p>A shared centre wanders around the room, and the units buzz around it, so they travel as a group.</p>
+
+<h3 id="mode-sway">7 Sway</h3>
+<p>Units sway from their home toward the back of the room and back again, about every 12 seconds, staggered so they don't all move together.</p>
+
+<h3 id="mode-perimeter">8 Perimeter</h3>
+<p>Units spread evenly around the walls and slowly circle the room. One lap takes about 90 seconds at speed x1.</p>
+
+<h3 id="mode-loop">9 Loop</h3>
+<p>Each unit follows a path you draw. Drag a unit in the room view: its path is recorded while you drag, and it loops as soon as you let go. At the end of each pass it glides back to the start in 0.4 seconds. Units without a loop stay home.</p>
+<div class="tablewrap"><table><thead><tr><th>Do</th><th>Result</th></tr></thead><tbody>
+<tr><td>Drag</td><td>record a loop (replaces any loop the unit had)</td></tr>
+<tr><td>Hold <kbd>shift</kbd> during part of the drag</td><td>that part becomes a <strong>jump</strong>: the unit cuts straight across it, taking no time (drawn as a thin line)</td></tr>
+<tr><td>Hold <kbd>shift</kbd> as you click, then let go of shift</td><td>the loop starts where you let go of shift</td></tr>
+<tr><td>Hold the unit's <strong>S</strong> (DELETE) for 2 s</td><td>delete the loop</td></tr>
+</tbody></table></div>
+<p>Speed changes how fast the loop plays back. <strong>Range has no effect on loops</strong>: they always follow exactly what you drew. Loops are kept per scene, so they come back when you return to loop mode.</p>
+<p>Recording a loop makes the unit movable. Try pressing M and R while loops play: R sends a looping unit home and it returns to its loop.</p>
+
+<h3 id="mode-assign">0 Assign</h3>
+<p>Each unit runs the mode it's assigned to, so some can orbit while others hop or loop. Units start assigned to set home positions.</p>
+<ol>
+<li>Press <kbd>0</kbd>.</li>
+<li>Tap <strong>S</strong> on the units you want (they flash slowly).</li>
+<li>Press a number key: the selected units get that mode and stop flashing.</li>
+</ol>
+<p><kbd>0</kbd> again clears the selection. With nothing selected, number keys switch modes as usual (leaving assign).</p>
+<p>The knobs follow each unit's assigned mode: turning unit 1's range while it's assigned orbit changes its orbit range, and you'll find the same value in orbit mode. Dragging works for units assigned to set home positions or loop. The unit boxes show each unit's assigned mode.</p>
+</section>
+
+<section id="sec-switchemups">
+<h2 id="switchemups">Switchemups line-ups</h2>
+<p>The third part of the show has 4 sets with players from the audience. Each set is its own scene (switchemups 1-4), and you choose its units from the sign-up sheet in the second intermission.</p>
+<h3 id="sw-create">Create or edit a set</h3>
+<ol>
+<li>Load <strong>switchemups 1</strong> with the scene buttons.</li>
+<li>Click the blue <strong>EDIT LINE-UP</strong> button (just above the unit boxes). It turns orange and says DONE.</li>
+<li>Click a unit box. A list opens.</li>
+<li>Click the instrument or input for that player. Each entry shows its channels (<code>IN:15</code>).
+<ul>
+<li>Grey entries share a channel with another unit (the list says which).</li>
+<li>Someone on a channel that isn't a named instrument? Pick the <strong>IN #</strong> entry for that channel.</li>
+<li>Pick <strong>(empty)</strong> to clear a slot.</li>
+</ul></li>
+<li>Repeat for each player (up to 8), then click <strong>DONE</strong>.</li>
+<li>Load switchemups 2 and repeat, then 3 and 4.</li>
+</ol>
+<p>Then for each set: load it, set the levels with the faders, and press <kbd>1</kbd> to drag each unit to roughly where that player stands. All of it is saved as you go.</p>
+<h3 id="sw-erase">Start a set over</h3>
+<p>Press that set's <strong>erase</strong> button. It empties the line-up and forgets its levels, homes and loops. Only switchemups sets can be erased.</p>
+<blockquote>A problem with an input? Tell FOH the IN number from the unit box.</blockquote>
+</section>
+
+<section id="sec-monitoring">
+<h2 id="monitoring">Monitoring switch</h2>
+<div class="tablewrap"><table><thead><tr><th>Setting</th><th>Use it for</th></tr></thead><tbody>
+<tr><td><strong>Array Routing - Direct-In Monitoring</strong></td><td><strong>The show.</strong> The four speakers play the panned sound. Your headphones get every unit at its level, without the panning, so you can judge balance from your seat.</td></tr>
+<tr><td><strong>Practice (Laptop) - Direct-in Monitoring</strong></td><td>Practising on the laptop: every unit at its level, without the panning. Good for levels.</td></tr>
+<tr><td><strong>Practice (Laptop) - Post-Pan Monitoring</strong></td><td>Practising on the laptop: the panning folded down to stereo. Left and right movement comes through, front and back doesn't.</td></tr>
+</tbody></table></div>
+<blockquote class="warn"><strong>Before the show, check it's on Array Routing.</strong> The practice settings send sound to the laptop, not to the speakers.</blockquote>
+</section>
+
+<section id="sec-saving">
+<h2 id="saving">What's saved</h2>
+<p>Settings are written to files next to the patch as you work, and read back when it opens.</p>
+<div class="tablewrap"><table><thead><tr><th>Saved automatically</th><th>Starts fresh every time</th></tr></thead><tbody>
+<tr><td>Levels, spread, width, homes, loops, assignments, range / speed / accel for each mode (all per scene); overall speed and glide time; the switchemups line-ups</td><td>Movable / frozen (everything starts frozen), the current mode, glide or cut, the knob page, assign selections, show / hide home positions</td></tr>
+</tbody></table></div>
+<p>The speaker measurements are only saved on purpose (see <a href="#technical-notes">Technical notes</a>).</p>
+</section>
+
+<section id="sec-troubleshooting">
+<h2 id="troubleshooting">Troubleshooting</h2>
+<div class="tablewrap"><table><thead><tr><th>Problem</th><th>Likely cause / fix</th></tr></thead><tbody>
+<tr><td>A knob or fader does nothing</td><td>Pickup: move it until the yellow meets the blue.</td></tr>
+<tr><td>A knob shows n/a</td><td>Width on a single mic, or range / speed / accel in set home positions (or a unit assigned to it).</td></tr>
+<tr><td>Number keys do nothing</td><td>Click the Max patch window so it's in front.</td></tr>
+<tr><td>Nothing moves</td><td>Units are frozen: press M. Or you're in set home positions (<kbd>1</kbd>), where units stay home.</td></tr>
+<tr><td>A unit won't leave home</td><td>Its range is at 0% in this mode (STOP page).</td></tr>
+<tr><td>A unit moves too fast or slow</td><td>Its speed (PLAY page) or the overall speed (CYCLE, knob 1).</td></tr>
+<tr><td>Units drift slowly instead of jumping</td><td>Accel is below instant (REC page), or glide is on.</td></tr>
+<tr><td>Too much movement</td><td>Press M to freeze units, then R to send them home.</td></tr>
+<tr><td>Something too loud</td><td>Pull that unit's fader down.</td></tr>
+<tr><td>A unit has no sound</td><td>Its fader is at the bottom (off). Check its IN number with FOH.</td></tr>
+<tr><td>Dragging does nothing</td><td>Dragging only works in set home positions, loop, or assign (for units assigned to those).</td></tr>
+<tr><td>No EDIT LINE-UP button</td><td>It only appears in switchemups scenes.</td></tr>
+<tr><td>No sound from the quad</td><td>Check the monitoring switch is on Array Routing. If it is, tell FOH: they bring up the backup PA.</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="sec-technical-notes">
+<h2 id="technical-notes">Technical notes (Michael)</h2>
+<p><em>For maintaining the my code.</em></p>
+<h3 id="tn-files">Files</h3>
+<div class="tablewrap"><table><thead><tr><th>File</th><th>Role</th></tr></thead><tbody>
+<tr><td><code>dbap_core.gendsp</code> / <code>.genexpr</code></td><td>The panner: 24 inputs (console channels) to 4 speakers (up to 6), DBAP, calibration delay and gain, headphone monitor on outlets 5-6 in quad</td></tr>
+<tr><td><code>dbap_control.js</code></td><td><code>[v8]</code>: sources, scenes, line-ups, room measurements and calibration; writes the point and speaker buffers</td></tr>
+<tr><td><code>dbap_behave.js</code></td><td><code>[v8]</code>: modes, units, levels, per-mode settings, loops, homes, assign; about 30 updates a second</td></tr>
+<tr><td><code>dbap_nk.js</code></td><td><code>[v8]</code>: nanoKONTROL2 pages, pickup, LEDs, S / M / R</td></tr>
+<tr><td><code>nk_screen.js</code></td><td><code>[v8ui]</code>: the on-screen nanoKONTROL2 (shared with the looper)</td></tr>
+<tr><td><code>dbap_view.js</code></td><td><code>[v8ui]</code>: the room view</td></tr>
+<tr><td><code>dbap_testsignals.gendsp</code></td><td>Test parts for all 23 channels (muted with <code>mute~</code> for the show)</td></tr>
+<tr><td><code>dbap_scenes.json</code></td><td>Sources, scenes, channel names and the switchemups scenes (edited by hand)</td></tr>
+<tr><td><code>dbap_room.json</code></td><td>Speaker measurements and calibration (<code>saveroom</code> / <code>loadroom</code>)</td></tr>
+<tr><td><code>dbap_params.json</code></td><td>Written automatically: levels, settings, homes, loops, assignments</td></tr>
+<tr><td><code>dbap_lineups.json</code></td><td>Written automatically: switchemups line-ups</td></tr>
+</tbody></table></div>
+
+<h3 id="tn-flow">Signal flow</h3>
+<ul>
+<li><code>adc~ 1-24 (+ test signals) &rarr; panner gen~ &rarr; outlets 1-4 &rarr; USB returns &rarr; FL FR BL BR</code></li>
+<li><code>panner gen~ outlets 5-6 (quad) &rarr; headphone monitor (every point at its level, before panning)</code></li>
+<li>Control: <code>dbap_behave &rarr; dbap_control &rarr; buffer~ dbap_pts / dbap_spk &rarr; gen~</code>; state goes back out as <code>dict dbap_state</code> to the engine and the view.</li>
+</ul>
+
+<h3 id="tn-messages">Messages</h3>
+<div class="tablewrap"><table><thead><tr><th>To</th><th>Message</th><th>Does</th></tr></thead><tbody>
+<tr><td>dbap_behave</td><td><code>resetshow</code></td><td>Everything frozen; speed x1 and accel instant for every unit and mode, in all scenes</td></tr>
+<tr><td>dbap_behave</td><td><code>erasescene switchemups&lt;n&gt;</code></td><td>Empty a line-up and forget its settings</td></tr>
+<tr><td>dbap_behave</td><td><code>saveparams</code> / <code>loadparams &lt;file&gt;</code></td><td>Backup copies of the settings</td></tr>
+<tr><td>dbap_control</td><td><code>loadscenes &lt;file&gt;</code>, <code>scene &lt;name&gt;</code></td><td>Load the scene file; recall a scene</td></tr>
+<tr><td>dbap_control</td><td><code>savelineups</code> / <code>loadlineups &lt;file&gt;</code></td><td>Backup copies of the line-ups</td></tr>
+<tr><td>dbap_control</td><td><code>measure &lt;n&gt; &lt;A&gt; &lt;B&gt;</code>, <code>baseline &lt;d&gt;</code></td><td>Speaker n's distances (ft) from tape marks A and B; the A-B distance</td></tr>
+<tr><td>dbap_control</td><td><code>listener &lt;x&gt; &lt;y&gt;</code></td><td>Calibration position (ft from the centre, +y toward the stage)</td></tr>
+<tr><td>dbap_control</td><td><code>adjust &lt;n&gt; &lt;dB&gt; &lt;ms&gt;</code>, <code>calibrate 0|1</code></td><td>Manual trim for a speaker; calibration off / on</td></tr>
+<tr><td>dbap_control</td><td><code>saveroom</code> / <code>loadroom &lt;file&gt;</code></td><td>Save / load the measurements</td></tr>
+<tr><td>dbap_view</td><td><code>seethrough 0|1</code></td><td>Side strips solid / see-through (for meters behind the view)</td></tr>
+</tbody></table></div>
+
+<h3 id="tn-gen">Panner gen~</h3>
+<ul>
+<li>Parameters: <code>rolloff</code> (dB per doubling of distance, default 6), <code>block</code> (samples between gain updates, default 32; 1 is sample-accurate), <code>mongain</code> (headphone monitor, default 0.5).</li>
+<li><code>buffer~ dbap_pts 1 5</code>: 24 points x (x, y, level, slew ms, blur m). <code>buffer~ dbap_spk 1 4</code>: speakers x (x, y, delay ms, gain); frame 7 holds the speaker count.</li>
+<li>Coordinates in metres, origin at the centre of the speakers, +y toward the stage.</li>
+</ul>
+
+<h3 id="tn-controller">Controller</h3>
+<ul>
+<li><code>[ctlin] &rarr; [pack 0 0] &rarr; dbap_nk.js</code>; <code>nk_screen.js</code> sends <code>screen value cc</code> to the same inlet.</li>
+<li><code>dbap_nk.js</code> outlet 2 &rarr; <code>[unpack 0 0] &rarr; [ctlout "nanoKONTROL2 CTRL"]</code> for the LEDs (LED mode external).</li>
+<li>CCs: knobs 8-15, faders 0-7, S 32-39, M 48-55, R 64-71, transport 41-46.</li>
+</ul>
+</section>
+<p id="none">Nothing matches.</p>
+</main>
+<script>
+// go('mode-loop'): jump to a section (from Max: executejavascript go('mode-loop'))
+function go(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  clearSearch();
+  el.scrollIntoView();
+  history.replaceState(null, "", "#" + id);
+}
+
+var q = document.getElementById("q");
+var sections = Array.prototype.slice.call(document.querySelectorAll("main section"));
+var links = Array.prototype.slice.call(document.querySelectorAll("#side a"));
+var original = sections.map(function (s) { return s.innerHTML; });
+
+function clearSearch() {
+  if (!q.value) return;
+  q.value = "";
+  search();
+}
+
+function search() {
+  var term = q.value.trim().toLowerCase();
+  var shown = 0;
+  sections.forEach(function (s, i) {
+    s.innerHTML = original[i];
+    var hit = !term || s.textContent.toLowerCase().indexOf(term) >= 0;
+    s.classList.toggle("hide", !hit);
+    if (hit) shown++;
+    if (hit && term) mark(s, term);
+  });
+  links.forEach(function (a) {
+    var sec = document.getElementById("sec-" + a.dataset.sec);
+    a.classList.toggle("hide", !!(sec && sec.classList.contains("hide")));
+  });
+  document.getElementById("none").style.display = shown ? "none" : "block";
+  spy();
+}
+
+// highlight the search term in a section's text
+function mark(root, term) {
+  var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+  var nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  nodes.forEach(function (n) {
+    var t = n.nodeValue, low = t.toLowerCase(), at = low.indexOf(term);
+    if (at < 0) return;
+    var frag = document.createDocumentFragment(), from = 0;
+    while (at >= 0) {
+      frag.appendChild(document.createTextNode(t.slice(from, at)));
+      var m = document.createElement("mark");
+      m.textContent = t.slice(at, at + term.length);
+      frag.appendChild(m);
+      from = at + term.length;
+      at = low.indexOf(term, from);
+    }
+    frag.appendChild(document.createTextNode(t.slice(from)));
+    n.parentNode.replaceChild(frag, n);
+  });
+}
+
+q.addEventListener("input", search);
+
+// highlight the sidebar entry for the section in view
+var heads = Array.prototype.slice.call(document.querySelectorAll("main h2, main h3"));
+function spy() {
+  var cur = null;
+  heads.forEach(function (h) { if (h.getBoundingClientRect().top < 120) cur = h.id; });
+  links.forEach(function (a) { a.classList.toggle("on", a.getAttribute("href") === "#" + cur); });
+}
+window.addEventListener("scroll", spy);
+spy();
+if (location.hash) go(location.hash.slice(1));
+</script>
 </body>
 </html>
