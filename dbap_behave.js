@@ -390,6 +390,7 @@ function withJumps(raw) {
 function clearloop(n) {
 	const u = unitOf(n);
 	if (!u || !u.p.loop) return;
+	if (behOf(u) !== "loop") return;   // only where the loop is playing (loop mode, or assigned to loop)
 	delete u.p.loop;
 	paramsDirty = true;
 	outlet(1, "hasloop", n, 0);

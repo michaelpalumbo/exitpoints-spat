@@ -3,7 +3,7 @@
 // Shows what's special about the current mode: a one-line description and only
 // the controls that do something particular in it (nanoKONTROL2 buttons and
 // pages, keys, mouse). Greyed rows are controls that do nothing in this mode.
-// Designed at 400 x 340; scales to the size of the box.
+// Designed at 400 x 380; scales to the size of the box.
 //
 // Inlet (connect the same cords as the room view):
 //   dictionary dbap_behave     from dbap_behave.js outlet 2
@@ -17,7 +17,7 @@ mgraphics.init();
 mgraphics.relative_coords = 0;
 mgraphics.autofill = 0;
 
-const DW = 400, DH = 340;
+const DW = 400, DH = 380;
 
 const C_BG = [0.11, 0.11, 0.12, 1];
 const C_PANEL = [0.16, 0.16, 0.18, 1];
@@ -29,16 +29,25 @@ const C_DIM = [0.5, 0.5, 0.52, 1];
 const C_BLUE = [0.45, 0.75, 1.0, 1];
 const C_LIT = [0.95, 0.35, 0.2, 1];
 
-// glyphs: S M R (strip buttons), STOP PLAY REC (pages), key:<text>, mouse:<text>
+// glyphs: S M R (strip buttons), STOP PLAY REC (pages), key:<text>, mouse:<text>,
+//         home (an X), combo:S+<key text> (press S, then the key)
+//
+// Every mode lists M, R and S first. STRIP holds what they usually do; a mode
+// can replace any of them with m / r / s: [text, off], or null to leave it out.
+const STRIP = {
+	M: ["move / freeze this unit"],
+	R: ["send home (with M on, it comes back)"],
+	S: ["not used here", true]
+};
 // off: true = this control does nothing in the mode (drawn greyed)
 const HELP = {
 	manual: {
 		title: "set home positions",
-		desc: "Every unit sits at its home. Drag one to give it a new home.",
+		desc: "Every unit sits at its home. Drag one to give it a new home: in every other mode, its home is marked with an X in its colour.",
+		m: ["always on here", true],
+		r: ["not used here", true],
 		rows: [
 			["mouse:drag", "a unit (or any of its dots): set its home"],
-			["M", "always on here", true],
-			["R", "not used here", true],
 			["STOP", "range, speed, accel: not used here", true]
 		]
 	},
@@ -95,12 +104,12 @@ const HELP = {
 	loop: {
 		title: "loop",
 		desc: "Each unit follows a path you draw.",
+		r: ["send home (with M on, back onto its loop)"],
+		s: ["hold 2 s: delete the loop"],
 		rows: [
 			["mouse:drag", "a unit: record its loop (plays when you let go)"],
 			["key:shift", "while dragging: that stretch becomes a jump"],
 			["key:shift", "+ click, then drag: choose where the loop starts"],
-			["S", "hold 2 s: delete the loop"],
-			["R", "M on: goes home, then back onto its loop"],
 			["PLAY", "speed: playback speed"],
 			["STOP", "range: no effect on loops", true]
 		]
@@ -108,9 +117,9 @@ const HELP = {
 	assign: {
 		title: "assign",
 		desc: "Each unit runs its own mode.",
+		s: null,
 		rows: [
-			["S", "tap: select units (they flash)"],
-			["key:1-9", "give the selected units that mode"],
+			["combo:S+1-9", "tap S on units (they flash), then a number: give them that mode"],
 			["key:0", "clear the selection"],
 			["STOP", "range, speed, accel: for each unit's own mode"],
 			["mouse:drag", "units assigned to set home or loop"]
@@ -188,8 +197,20 @@ function toArr(v) {
 	return Array.isArray(v) ? v : [v];
 }
 
-// a glyph in a 44 x 24 box at (x, y)
+const GW = 64;   // glyph column width
+
+// a glyph centred in a GW x 24 box at (x, y)
 function glyph(g, x, y, off) {
+	if (g.indexOf("combo:") === 0) {
+		// S, a plus, then a key cap
+		const keyText = g.split("+")[1];
+		rrect(x, y, 24, 24, 4, off ? C_OFF : C_BTN);
+		text("S", x + 12, y + 18, 15, off ? C_DIM : C_WHITE, "c");
+		text("+", x + 30, y + 17, 12, C_DIM, "c");
+		glyphKey(keyText, x + 36, y, 28, off);
+		return;
+	}
+	x += (GW - 44) / 2;
 	const w = 44, h = 24, cx = x + w / 2, cy = y + h / 2;
 	const fg = off ? C_DIM : C_TEXT;
 	if (g === "S" || g === "M" || g === "R") {
@@ -215,14 +236,17 @@ function glyph(g, x, y, off) {
 		}
 		return;
 	}
+	if (g === "home") {
+		setc(off ? C_DIM : C_WHITE);
+		mgraphics.set_line_width(2);
+		mgraphics.move_to(cx - 6, cy - 6); mgraphics.line_to(cx + 6, cy + 6);
+		mgraphics.move_to(cx - 6, cy + 6); mgraphics.line_to(cx + 6, cy - 6);
+		mgraphics.stroke();
+		return;
+	}
 	const [kind, label] = g.split(":");
 	if (kind === "key") {
-		rrect(x, y + 1, w, h - 2, 4, off ? C_OFF : [0.2, 0.2, 0.23, 1]);
-		setc(off ? C_DIM : [0.4, 0.4, 0.45, 1]);
-		mgraphics.set_line_width(1);
-		mgraphics.rectangle_rounded(x + 0.5, y + 1.5, w - 1, h - 3, 4, 4);
-		mgraphics.stroke();
-		text(label, cx, cy + 4, 11, fg, "c");
+		glyphKey(label, x, y, w, off);
 		return;
 	}
 	if (kind === "mouse") {
@@ -232,6 +256,29 @@ function glyph(g, x, y, off) {
 		mgraphics.stroke();
 		text(label, cx, cy + 4, 11, off ? C_DIM : C_BLUE, "c");
 	}
+}
+
+function glyphKey(label, x, y, w, off) {
+	const h = 24;
+	rrect(x, y + 1, w, h - 2, 4, off ? C_OFF : [0.2, 0.2, 0.23, 1]);
+	setc(off ? C_DIM : [0.4, 0.4, 0.45, 1]);
+	mgraphics.set_line_width(1);
+	mgraphics.rectangle_rounded(x + 0.5, y + 1.5, w - 1, h - 3, 4, 4);
+	mgraphics.stroke();
+	text(label, x + w / 2, y + h / 2 + 4, 11, off ? C_DIM : C_TEXT, "c");
+}
+
+// the mode's rows: M, R, S (unless replaced or left out), its own rows, the home X
+function rowsFor(mode, hp) {
+	const rows = [];
+	for (const b of ["M", "R", "S"]) {
+		const k = b.toLowerCase();
+		const r = k in hp ? hp[k] : STRIP[b];
+		if (r) rows.push([b, r[0], r[1]]);
+	}
+	for (const r of hp.rows) rows.push(r);
+	if (mode !== "manual") rows.push(["home", "each unit's home (where R sends it)"]);
+	return rows;
 }
 
 // ---- paint ----
@@ -256,7 +303,7 @@ function paint() {
 	const hp = HELP[bh.mode];
 	if (!hp) { mgraphics.restore(); return; }
 
-	text("MODE " + (bh.modeKey || ""), 18, 26, 10, C_DIM);
+	text("MODE CHEAT SHEET   KEY " + (bh.modeKey || ""), 18, 26, 10, C_DIM);
 	text(hp.title.toUpperCase(), 18, 50, 20, C_WHITE);
 
 	let y = 68;
@@ -279,10 +326,10 @@ function paint() {
 	}
 
 	y += 10;
-	const tx = 18 + 44 + 12, tw = DW - tx - 18;
-	for (const [g, desc, off] of hp.rows) {
+	const tx = 18 + GW + 10, tw = DW - tx - 16;
+	for (const [g, desc, off] of rowsFor(bh.mode, hp)) {
 		const lines = wrap(desc, 12, tw);
-		const rowH = Math.max(28, lines.length * 15 + 8);
+		const rowH = Math.max(25, lines.length * 15 + 6);
 		if (y + rowH > DH - 10) break;   // out of room
 		glyph(g, 18, y + (rowH - 24) / 2, off);
 		let ly = y + (rowH - lines.length * 15) / 2 + 11;
@@ -290,7 +337,7 @@ function paint() {
 			text(ln, tx, ly, 12, off ? C_DIM : C_TEXT);
 			ly += 15;
 		}
-		y += rowH + 2;
+		y += rowH + 1;
 	}
 	mgraphics.restore();
 }

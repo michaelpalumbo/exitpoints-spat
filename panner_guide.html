@@ -161,7 +161,7 @@ section.hide { display: none; }
 <tr><td><strong>M</strong></td><td>Movable / frozen in this mode. Always movable in set home positions.</td></tr>
 <tr><td><strong>R</strong></td><td>Send home. M off: stays home. M on: goes back to the mode after. Nothing in set home positions.</td></tr>
 <tr><td><strong>S</strong> (tap)</td><td>Assign mode only: select the unit</td></tr>
-<tr><td><strong>S</strong> (hold 2 s)</td><td>Delete the unit's loop</td></tr>
+<tr><td><strong>S</strong> (hold 2 s)</td><td>Loop mode only: delete the unit's loop</td></tr>
 <tr><td><strong>Knob</strong></td><td>The unit's value on the current knob page</td></tr>
 </tbody></table></div>
 
@@ -278,7 +278,7 @@ section.hide { display: none; }
 <h3 id="s-button">S: select and delete</h3>
 <div class="tablewrap"><table><thead><tr><th>Do</th><th>Where</th><th>Result</th></tr></thead><tbody>
 <tr><td>Tap</td><td>assign mode</td><td>Select the unit (slow flash). Tap again to deselect.</td></tr>
-<tr><td>Hold 2 s</td><td>any mode</td><td>Delete the unit's loop. It flashes fast while you hold; let go early to keep the loop. Hold several S buttons to delete several.</td></tr>
+<tr><td>Hold 2 s</td><td>loop mode (or a unit assigned to loop)</td><td>Delete the unit's loop. It flashes fast while you hold; let go early to keep the loop. Hold several S buttons to delete several. In other modes it does nothing, so a loop can't be deleted by accident.</td></tr>
 </tbody></table></div>
 <p>In loop mode, units with a loop show <strong>DELETE</strong> on their S button. S is lit while a unit is playing its loop.</p>
 
@@ -437,8 +437,8 @@ section.hide { display: none; }
 </section>
 
 <section id="sec-technical-notes">
-<h2 id="technical-notes">Technical notes (Michael)</h2>
-<p><em>For maintaining the my code.</em></p>
+<h2 id="technical-notes">Technical notes</h2>
+<p><em>For maintaining the patch.</em></p>
 <h3 id="tn-files">Files</h3>
 <div class="tablewrap"><table><thead><tr><th>File</th><th>Role</th></tr></thead><tbody>
 <tr><td><code>dbap_core.gendsp</code> / <code>.genexpr</code></td><td>The panner: 24 inputs (console channels) to 4 speakers (up to 6), DBAP, calibration delay and gain, headphone monitor on outlets 5-6 in quad</td></tr>

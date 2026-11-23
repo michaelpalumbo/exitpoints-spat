@@ -13,6 +13,8 @@
 //                   the LED flashes slowly while selected. Tap again to deselect.
 //             hold 2 s: clear the unit's loop (the LED flashes fast while held;
 //                   let go early to keep the loop). Hold several to clear several.
+//                   Only in loop mode (or for units assigned to loop in assign
+//                   mode), so a loop can't be deleted by accident elsewhere.
 //             Otherwise the LED is lit while the unit is playing its loop (its
 //             behaviour is loop and it has one).
 //   knob      the unit's value for the current page:
@@ -235,7 +237,7 @@ function flash() {
 		let on;
 		if (!u.id) {
 			on = 0;
-		} else if (sDown[n] && u.hasLoop && !sDone[n]) {
+		} else if (sDown[n] && playingLoop(u) && !sDone[n]) {   // only where the loop plays
 			if (now - sDown[n] >= CLEAR_MS) {
 				sDone[n] = 1;
 				outlet(0, "clearloop", n + 1);
