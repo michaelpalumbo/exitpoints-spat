@@ -315,7 +315,7 @@ function paint() {
 	// context: line-up editing, assign selection
 	const sel = toArr(bh.units).filter(u => u.selected).length;
 	let ctx = "";
-	if (st && st.editing) ctx = "Editing the line-up: click a unit box to choose its source.";
+	if (st && st.editing) ctx = "Editing the line-up: click a unit box to choose its source. Shift-click several sources, then DONE, to make a group.";
 	else if (bh.mode === "assign" && sel) ctx = sel + " selected: press 1-9 to give them that mode.";
 	if (ctx) {
 		y += 6;

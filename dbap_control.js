@@ -27,6 +27,8 @@
 // patch's folder (the patch must have been saved once so it has a folder).
 //   lineupedit <0|1>            editing on / off (line-up scenes only)
 //   setkey <slot 1-8> <id | ->  put a source on a unit slot, or empty it
+//   setgroup <slot> <label> <id> <id> ...   put several sources on one slot as a
+//                               group unit (label up to 8 characters)
 //   clearlineup <scene>         empty a line-up scene (all 8 slots)
 //   savelineups <file.json>, loadlineups <file.json>   backups
 //
@@ -148,9 +150,14 @@ function loadScene(name, keepEdit) {
 	let defs, keys;
 	if (sc.lineup) {
 		ensureLineups();
-		keys = padKeys(lineups[name]);
+		const lu = getLineup(name);
+		keys = lu.keys;
 		defs = {};
-		for (const id of keys) if (id !== "-" && catalog[id]) defs[id] = catalog[id];
+		for (const id of keys) {
+			if (id === "-") continue;
+			if (catalog[id]) defs[id] = catalog[id];
+			else if (lu.groups[id]) defs[id] = groupDef(lu.groups[id].label, lu.groups[id].members);
+		}
 	} else {
 		defs = sc.sources || {};
 		keys = toArr(sc.keys);
@@ -241,6 +248,52 @@ function fileExists(path) {
 	}
 }
 
+// a line-up: { keys: [8 ids or "-"], groups: { gid: { label, members: [ids] } } }
+// (older files stored just the keys array)
+function getLineup(name) {
+	const v = lineups[name];
+	if (!v) return { keys: padKeys([]), groups: {} };
+	if (Array.isArray(v)) return { keys: padKeys(v), groups: {} };
+	return { keys: padKeys(v.keys), groups: v.groups || {} };
+}
+
+function putLineup(name, keys, groups) {
+	const used = {};
+	for (const id of keys) if (groups[id]) used[id] = groups[id];   // drop groups no longer used
+	lineups[name] = { keys, groups: used };
+	saveLineups();
+}
+
+// several catalogue sources as one unit: their mics in a row, 0.6 m apart,
+// each source keeping its own mic layout
+function groupDef(label, ids) {
+	ids = toArr(ids).filter(id => catalog[id]);
+	const n = ids.length;
+	const points = [];
+	const homes = [];
+	ids.forEach((id, i) => {
+		const d = catalog[id];
+		const sx = (i - (n - 1) / 2) * 0.6;
+		const w = d.width === undefined ? 1 : d.width;
+		for (const p of toArr(d.points)) {
+			const o = toArr(p.offset);
+			const q = { ch: p.ch, offset: [sx + (o[0] || 0) * w, (o[1] || 0) * w] };
+			if (p.gain !== undefined) q.gain = p.gain;
+			points.push(q);
+		}
+		homes.push(toArr(d.home));
+	});
+	const home = homes.length
+		? [homes.reduce((t, h) => t + (h[0] || 0), 0) / homes.length, homes.reduce((t, h) => t + (h[1] || 0), 0) / homes.length]
+		: [0, 2.2];
+	return { label, home, acoustic: ids.some(id => catalog[id].acoustic), group: "", width: 1, points, members: ids, enabled: true };
+}
+
+function cleanLabel(label) {
+	const t = String(label).replace(/[^A-Za-z0-9 _-]/g, "").trim().slice(0, 8).trim();
+	return t || "GROUP";
+}
+
 function padKeys(k) {
 	const a = toArr(k).slice(0, NKEYS).map(String);
 	while (a.length < NKEYS) a.push("-");
@@ -273,22 +326,67 @@ function setkey(slot, id) {
 		error("dbap: no source " + id + "\n");
 		return;
 	}
-	const keys = padKeys(currentKeys);
+	const lu = getLineup(sceneName);
+	const keys = lu.keys;
 	if (id !== "-") {
-		const mine = channelsOf(catalog[id]);
-		for (let i = 0; i < NKEYS; i++) {
-			if (i === slot - 1 || keys[i] === "-") continue;
-			if (keys[i] === id || channelsOf(catalog[keys[i]]).some(c => mine.indexOf(c) >= 0)) {
-				post("dbap: " + catalog[id].label + " shares a channel with unit " + (i + 1) + "\n");
-				return;
-			}
+		const clash = slotClash(keys, slot, channelsOf(catalog[id]));
+		if (clash) {
+			post("dbap: " + catalog[id].label + " shares a channel with unit " + clash + "\n");
+			return;
 		}
 	}
 	keys[slot - 1] = id;
-	ensureLineups();
-	lineups[sceneName] = keys;
-	saveLineups();
+	putLineup(sceneName, keys, lu.groups);
 	loadScene(sceneName, true);
+}
+
+function setgroup(slot, label) {
+	if (!isLineup || !editMode) {
+		post("dbap: turn on line-up editing first\n");
+		return;
+	}
+	slot = Math.round(slot);
+	if (slot < 1 || slot > NKEYS) return;
+	const ids = arrayfromargs(arguments).slice(2).map(String).filter(id => catalog[id]);
+	if (ids.length < 2) {
+		post("dbap: a group needs at least two sources\n");
+		return;
+	}
+	// the members can't share a channel with each other...
+	const all = [];
+	for (const id of ids) {
+		for (const c of channelsOf(catalog[id])) {
+			if (all.indexOf(c) >= 0) {
+				post("dbap: two of those sources share channel " + c + "\n");
+				return;
+			}
+			all.push(c);
+		}
+	}
+	// ...or with another unit
+	const lu = getLineup(sceneName);
+	const clash = slotClash(lu.keys, slot, all);
+	if (clash) {
+		post("dbap: that group shares a channel with unit " + clash + "\n");
+		return;
+	}
+	const lab = cleanLabel(label);
+	const gid = "g" + slot + "_" + lab.replace(/ /g, "_");
+	lu.groups[gid] = { label: lab, members: ids };
+	lu.keys[slot - 1] = gid;
+	putLineup(sceneName, lu.keys, lu.groups);
+	loadScene(sceneName, true);
+}
+
+// the unit number (1-8) that already uses one of these channels, or 0
+function slotClash(keys, slot, chs) {
+	for (let i = 0; i < NKEYS; i++) {
+		if (i === slot - 1 || keys[i] === "-") continue;
+		const src = sources[keys[i]];
+		const used = src ? channelsOf(src) : channelsOf(catalog[keys[i]]);
+		if (used.some(c => chs.indexOf(c) >= 0)) return i + 1;
+	}
+	return 0;
 }
 
 function clearlineup(name) {
@@ -299,8 +397,7 @@ function clearlineup(name) {
 		return;
 	}
 	ensureLineups();
-	lineups[name] = padKeys([]);
-	saveLineups();
+	putLineup(name, padKeys([]), {});
 	post("dbap: line-up " + name + " erased\n");
 	if (sceneName === name) loadScene(name, editMode);
 }

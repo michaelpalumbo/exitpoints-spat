@@ -30,9 +30,15 @@
 //                              range, speed, accel: per unit per behaviour
 //   speed <mult>, glidetime <seconds>      global
 //   clearloop <n>
-//   lineupedit <0|1>, setkey <slot> <id>   line-up editing, passed to dbap_control.js
+//   lineupedit <0|1>, setkey <slot> <id>, setgroup <slot> <label> <ids...>
+//                              line-up editing, passed to dbap_control.js
+//   keysoff <0|1>              pause the keyboard (while a group name is typed)
 //   erasescene <name>          empty a switchemups line-up and forget its levels,
 //                              settings, homes and loops
+//   allmovable <0|1>           debug / testing: 1 makes every unit movable in every
+//                              mode at once (and on every scene change from then
+//                              on); 0 stops doing that (units stay as they are;
+//                              resetshow freezes them)
 //   resetshow                  everything frozen; speed x1 and accel instant for
 //                              every unit and behaviour (levels, spread, width,
 //                              range, homes, loops and assignments are kept)
@@ -100,6 +106,7 @@ let lastMs = Date.now();
 let lastAsk = 0;
 let tickCount = 0;
 const selected = new Set();
+let allMovable = false;     // debug: every unit starts movable in every mode
 
 // Dictionaries are held open for the life of the script. A named dict that
 // nothing holds can be freed between writes, and a reader then gets an empty one.
@@ -130,6 +137,7 @@ function loadbang() {
 // ---- input ----
 
 function key(a) {
+	if (keysPaused) return;
 	if (a === 9) {
 		glide = glide ? 0 : 1;
 		publish();
@@ -148,6 +156,11 @@ function key(a) {
 // line-up editing (switchemups): passed through to dbap_control.js
 function lineupedit(on) { outlet(0, "lineupedit", on ? 1 : 0); }
 function setkey(slot, id) { outlet(0, "setkey", slot, id); }
+function setgroup() { outlet(0, "setgroup", ...arrayfromargs(arguments)); }
+
+// the number keys are paused while a name is being typed (room view's dialog)
+let keysPaused = false;
+function keysoff(on) { keysPaused = !!on; }
 
 function erasescene(name) {
 	name = String(name);
@@ -278,6 +291,27 @@ function unitparam(n, name, v) {
 		return;
 	}
 	paramsDirty = true;
+	publish();
+}
+
+function allModesOn() {
+	const a = {};
+	for (const m of MODE_NAMES) a[m] = true;
+	return a;
+}
+
+function allmovable(on) {
+	allMovable = !!on;
+	if (allMovable) {
+		for (const u of units) {
+			cancelHoming(u);
+			u.activeBy = allModesOn();
+			resetBehaviour(u);
+			startTrans(u, glide ? glideTime : 0);
+		}
+	}
+	post("dbap_behave: all movable " + (allMovable ? "on" : "off") + "\n");
+	sendUnits();   // M LEDs
 	publish();
 }
 
@@ -556,7 +590,7 @@ function buildUnits() {
 			pos: pos.slice(),
 			vel: [0, 0],
 			hold: pos.slice(),
-			activeBy: {},         // every unit starts frozen in every mode
+			activeBy: allMovable ? allModesOn() : {},   // frozen everywhere, unless debugging
 			trans: null,
 			slew: -1,
 			T: 0,

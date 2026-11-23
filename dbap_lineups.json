@@ -1,5 +1,27 @@
 {
     "lineups": {
-        "switchemups1": [ "in5", "in6", "-", "-", "-", "-", "-", "-" ]
+        "switchemups1": [ "in19", "in20", "in5", "in6", "-", "-", "-", "-" ],
+        "switchemups2": {
+            "keys": [ "g1_symbol_G", "-", "-", "-", "-", "-", "-", "-" ],
+            "groups": {
+                "g1_symbol_G": {
+                    "label": "symbol G",
+                    "members": [ "in5", "in6" ]
+                }
+            }
+        },
+        "switchemups3": {
+            "keys": [ "g1_Guitar", "g2_Drums", "-", "-", "-", "-", "-", "-" ],
+            "groups": {
+                "g1_Guitar": {
+                    "label": "Guitar",
+                    "members": [ "in5", "in6" ]
+                },
+                "g2_Drums": {
+                    "label": "Drums",
+                    "members": [ "in19", "in20", "in17", "in18" ]
+                }
+            }
+        }
     }
 }

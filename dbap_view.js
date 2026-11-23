@@ -31,10 +31,15 @@
 //   HIDE / SHOW HOME POSITIONS (header): the X marking each unit's home
 //   EDIT LINE-UP (switchemups scenes only): while on, clicking a unit box opens
 //   a list to choose that slot's source; sources that would reuse a channel
-//   already in the line-up are greyed out
+//   already in the line-up are greyed out. Shift-click ticks several sources;
+//   DONE then asks for a name (up to 8 characters) and makes them one group
+//   unit. The name is typed into a [dialog]: this view sends "askname" out and
+//   expects "groupname <text>" back (see the patch notes in dbap_behave.js)
 //
 // Outlet: key <ascii>, drag <n> <x> <y> <shift>, dragend <n>,
-//         lineupedit <0|1>, setkey <slot> <id>  -> dbap_behave.js
+//         lineupedit <0|1>, setkey <slot> <id>, setgroup <slot> <label> <ids...>,
+//         keysoff <0|1>  -> dbap_behave.js;  askname  -> the patch's [dialog]
+// Inlet also: groupname <text>  (the [dialog]'s answer, via [prepend groupname])
 
 autowatch = 1;
 inlets = 1;
@@ -97,6 +102,9 @@ let dragOff = [0, 0];   // unit centre minus mouse, in metres, while dragging
 let showHomes = 1;      // X at each unit's home
 let picker = 0;     // unit slot whose source list is open (line-up editing), 0 = closed
 let pickHits = [];
+let pickSel = [];   // sources ticked with shift-click, for a group
+let naming = null;  // { slot, ids } while the group's name is being typed
+const nameTimeout = new Task(function () { cancelNaming(); }, this);
 let seeThrough = 0;
 
 function seethrough(on) {
@@ -206,7 +214,7 @@ function paint() {
 	drawModes(PAD, modesY, W - PAD * 2, MODES - 4);
 	drawHeader(W, headY);
 	drawUnits(PAD, unitsY, W - PAD * 2, UNITS - 4);
-	if (!st.editing) picker = 0;
+	if (!st.editing) { picker = 0; pickSel = []; }
 	drawPicker(W, mapTop, mapBot);
 }
 
@@ -490,16 +498,29 @@ function inLabel(u) {
 // the source list for one slot, over the room
 function drawPicker(W, top, bot) {
 	pickHits = [];
+	if (naming) {
+		const x0 = PAD + 6, y0 = top + 6, w = W - 2 * PAD - 12;
+		rrect(x0, y0, w, 60, 6, [0.08, 0.08, 0.09, 0.97]);
+		text("UNIT " + naming.slot + ": type a name for the group (up to 8 characters)", x0 + 12, y0 + 26, 12, C_LIT);
+		text("cancel the dialog or click here to give up", x0 + 12, y0 + 46, 10, C_DIM);
+		return;
+	}
 	if (!picker || !st.editing) return;
 	const cat = toArr(st.catalog);
 	const keys = toArr(st.keys).map(String);
-	// channels used by the other slots
+	// channels used by the other slots (sources or groups), and by ticked sources
 	const used = {};
 	keys.forEach((id, i) => {
 		if (i === picker - 1 || id === "-") return;
-		const c = cat.find(e => e.id === id);
-		if (c) for (const ch of toArr(c.channels)) used[ch] = i + 1;
+		const src = st.sources && st.sources[id];
+		const chs = src ? toArr(src.points).map(p => p.ch) : toArr((cat.find(e => e.id === id) || {}).channels);
+		for (const ch of chs) used[ch] = "unit " + (i + 1);
 	});
+	const ticked = {};
+	for (const id of pickSel) {
+		const c = cat.find(e => e.id === id);
+		if (c) for (const ch of toArr(c.channels)) ticked[ch] = id;
+	}
 	const items = [{ id: "-", label: "(empty)", channels: [] }].concat(cat);
 	const x0 = PAD + 6, y0 = top + 6, w = W - 2 * PAD - 12, h = bot - top - 12;
 	rrect(x0, y0, w, h, 6, [0.08, 0.08, 0.09, 0.97]);
@@ -507,25 +528,71 @@ function drawPicker(W, top, bot) {
 	mgraphics.set_line_width(1.5);
 	mgraphics.rectangle_rounded(x0, y0, w, h, 6, 6);
 	mgraphics.stroke();
-	text("UNIT " + picker + ": choose a source", x0 + 12, y0 + 20, 12, C_LIT);
+	text("UNIT " + picker + ": click a source, or shift-click several to make a group", x0 + 12, y0 + 20, 12, C_LIT);
 	text("click outside to cancel", x0 + w - 12, y0 + 20, 9, C_DIM, "r");
-	const cols = 2, rowH = 17;
+	const cols = 2, rowH = 17, footer = 30;
 	const rows = Math.ceil(items.length / cols);
 	const cw = (w - 24) / cols;
-	const lh = Math.min(rowH, (h - 40) / Math.max(1, rows));
+	const lh = Math.min(rowH, (h - 40 - footer) / Math.max(1, rows));
 	items.forEach((it, i) => {
 		const c = Math.floor(i / rows), r = i % rows;
 		const ix = x0 + 12 + c * cw, iy = y0 + 32 + r * lh;
-		const clash = toArr(it.channels).find(ch => used[ch]);
+		const tick = pickSel.indexOf(it.id) >= 0;
+		const chs = toArr(it.channels);
+		let clashWith = "";
+		for (const ch of chs) {
+			if (used[ch]) { clashWith = used[ch]; break; }
+			if (ticked[ch] && !tick) { clashWith = "ticked"; break; }
+		}
 		const current = keys[picker - 1] === it.id;
-		if (current) rrect(ix - 4, iy, cw - 8, lh - 1, 3, C_SPK);
-		const inl = toArr(it.channels).length ? "IN:" + toArr(it.channels).join("/") : "";
-		const colr = clash ? C_SPK : C_TEXT;
-		text(fit(it.label, 10, cw - 90), ix, iy + lh - 5, 10, colr);
-		text(inl + (clash ? "  (unit " + used[clash] + ")" : ""), ix + cw - 14, iy + lh - 5, 9, clash ? C_SPK : C_DIM, "r");
-		if (!clash) pickHits.push({ x: ix - 4, y: iy, w: cw - 8, h: lh, id: it.id });
+		if (tick) rrect(ix - 4, iy, cw - 8, lh - 1, 3, [0.45, 0.75, 1.0, 0.35]);
+		else if (current) rrect(ix - 4, iy, cw - 8, lh - 1, 3, C_SPK);
+		const inl = chs.length ? "IN:" + chs.join("/") : "";
+		const colr = clashWith ? C_SPK : C_TEXT;
+		text((tick ? "+ " : "") + fit(it.label, 10, cw - 100), ix, iy + lh - 5, 10, tick ? C_WHITE : colr);
+		text(inl + (clashWith ? "  (" + clashWith + ")" : ""), ix + cw - 14, iy + lh - 5, 9, clashWith ? C_SPK : C_DIM, "r");
+		if (!clashWith) pickHits.push({ x: ix - 4, y: iy, w: cw - 8, h: lh, id: it.id });
 	});
+	// DONE, once something is ticked
+	if (pickSel.length) {
+		const bw = 170, bx = x0 + w - bw - 12, by = y0 + h - footer + 2, bh2 = footer - 10;
+		rrect(bx, by, bw, bh2, 4, C_LIT);
+		const lbl = pickSel.length === 1 ? "DONE (1 source)" : "DONE: GROUP OF " + pickSel.length;
+		text(lbl, bx + bw / 2, by + bh2 / 2 + 4, 11, C_BG, "c");
+		pickHits.push({ x: bx, y: by, w: bw, h: bh2, done: 1 });
+		text(pickSel.length + " ticked", x0 + 12, by + bh2 / 2 + 4, 10, C_DIM);
+	}
 	pickHits.push({ panel: 1, x: x0, y: y0, w, h });
+}
+
+// ---- group naming ----
+
+function cleanLabel(label) {
+	const t = String(label).replace(/[^A-Za-z0-9 _-]/g, "").trim().slice(0, 8).trim();
+	return t || "GROUP";
+}
+
+function startNaming(slot, ids) {
+	naming = { slot, ids: ids.slice() };
+	outlet(0, "keysoff", 1);     // so typing the name doesn't change modes
+	outlet(0, "askname");
+	nameTimeout.cancel();
+	nameTimeout.schedule(20000);  // give up after 20 s (a cancelled dialog sends nothing)
+	mgraphics.redraw();
+}
+
+function groupname() {
+	if (!naming) return;
+	const label = cleanLabel(arrayfromargs(arguments).join(" "));
+	outlet(0, "setgroup", naming.slot, label, ...naming.ids);
+	cancelNaming();
+}
+
+function cancelNaming() {
+	nameTimeout.cancel();
+	if (naming) outlet(0, "keysoff", 0);
+	naming = null;
+	mgraphics.redraw();
 }
 
 // ---- mouse ----
@@ -561,17 +628,39 @@ function inside(b, x, y) {
 }
 
 function onclick(x, y, but, cmd, shift) {
+	if (naming) {                    // any click while naming gives up on it
+		cancelNaming();
+		return;
+	}
 	if (picker) {
 		for (const b of pickHits) {
 			if (b.panel || !inside(b, x, y)) continue;
+			if (b.done) {
+				const slot = picker, ids = pickSel.slice();
+				picker = 0;
+				pickSel = [];
+				if (ids.length === 1) outlet(0, "setkey", slot, ids[0]);
+				else startNaming(slot, ids);
+				mgraphics.redraw();
+				return;
+			}
+			if (shift && b.id !== "-") {    // tick / untick for a group
+				const i = pickSel.indexOf(b.id);
+				if (i >= 0) pickSel.splice(i, 1);
+				else pickSel.push(b.id);
+				mgraphics.redraw();
+				return;
+			}
 			outlet(0, "setkey", picker, b.id);
 			picker = 0;
+			pickSel = [];
 			mgraphics.redraw();
 			return;
 		}
 		const panel = pickHits.find(b => b.panel);
 		if (panel && inside(panel, x, y)) return;   // a greyed item or a gap: ignore
 		picker = 0;                                  // outside the list: cancel
+		pickSel = [];
 		mgraphics.redraw();
 		return;
 	}

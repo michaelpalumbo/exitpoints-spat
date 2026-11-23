@@ -58,7 +58,6 @@ section.hide { display: none; }
   <div class="t">Quad Panner: Operator Guide</div>
   <input id="q" type="search" placeholder="Search" autocomplete="off">
   <a class="l2" href="#words" data-sec="words">Words used in this guide</a>
-  <a class="l2" href="#key-points" data-sec="key-points">Key points</a>
   <a class="l2" href="#quick-reference" data-sec="quick-reference">Quick reference</a>
   <a class="l3" href="#qr-keys" data-sec="quick-reference">Keyboard</a>
   <a class="l3" href="#qr-strip" data-sec="quick-reference">nanoKONTROL2 strips</a>
@@ -126,17 +125,6 @@ section.hide { display: none; }
 </tbody></table></div>
 </section>
 
-<section id="sec-key-points">
-<h2 id="key-points">Key points</h2>
-<ul>
-<li><strong>Keep the Max window in front</strong>, or the number keys won't work.</li>
-<li><strong>Every unit starts frozen.</strong> Nothing moves until you press its <strong>M</strong>.</li>
-<li><strong>Frozen and movable are kept separately for each mode.</strong> A unit you made movable in orbit is still frozen in drift until you press its M there too. When you switch modes, each unit goes back to however you left it in that mode.</li>
-<li>The exception is <strong>mode 1, set home positions</strong>: there every unit is always movable, so it sits at its home and you can drag it to a new one.</li>
-<li><strong>Everything saves itself.</strong> You never need to save the patch.</li>
-</ul>
-</section>
-
 <section id="sec-quick-reference">
 <h2 id="quick-reference">Quick reference</h2>
 <h3 id="qr-keys">Keyboard</h3>
@@ -196,6 +184,7 @@ section.hide { display: none; }
 <tr><td>Hold <kbd>shift</kbd> as you click, then drag</td><td>loop</td><td>chooses where the loop starts</td></tr>
 <tr><td>HIDE / SHOW HOME POSITIONS</td><td>any time</td><td>hides or shows the home X marks</td></tr>
 <tr><td>EDIT LINE-UP</td><td>switchemups scenes</td><td>choose the units for that set</td></tr>
+<tr><td><kbd>shift</kbd>-click sources, then DONE</td><td>line-up list</td><td>make a group unit from several sources</td></tr>
 </tbody></table></div>
 </section>
 
@@ -388,6 +377,7 @@ section.hide { display: none; }
 <li>Grey entries share a channel with another unit (the list says which).</li>
 <li>Someone on a channel that isn't a named instrument? Pick the <strong>IN #</strong> entry for that channel.</li>
 <li>Pick <strong>(empty)</strong> to clear a slot.</li>
+<li><strong>Several players on one unit?</strong> <kbd>shift</kbd>-click each of their sources (they're marked with a +), then click <strong>DONE</strong> and type a short name (up to 8 characters). They become one group unit that moves together.</li>
 </ul></li>
 <li>Repeat for each player (up to 8), then click <strong>DONE</strong>.</li>
 <li>Load switchemups 2 and repeat, then 3 and 4.</li>
@@ -410,7 +400,7 @@ section.hide { display: none; }
 
 <section id="sec-saving">
 <h2 id="saving">What's saved</h2>
-<p>Settings are written to files next to the patch as you work, and read back when it opens.</p>
+<p>Settings are written to files next to the patch as you work, and read back when it opens. You never need to save the patch.</p>
 <div class="tablewrap"><table><thead><tr><th>Saved automatically</th><th>Starts fresh every time</th></tr></thead><tbody>
 <tr><td>Levels, spread, width, homes, loops, assignments, range / speed / accel for each mode (all per scene); overall speed and glide time; the switchemups line-ups</td><td>Movable / frozen (everything starts frozen), the current mode, glide or cut, the knob page, assign selections, show / hide home positions</td></tr>
 </tbody></table></div>
